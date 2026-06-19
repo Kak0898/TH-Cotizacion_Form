@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TH Cotizaciones</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app"></div>
+
+  <!--
+    CONFIGURACIÓN SUPABASE
+    1) Crea la tabla/función con supabase_counter.sql.
+    2) Pega aquí tu URL y ANON KEY del proyecto Supabase.
+    3) Si lo dejas vacío, la app usará contador local del navegador.
+  -->
+  <script>
+    window.TH_SUPABASE = {
+      url: "https://fjrwtghxgkkmezpytyky.supabase.co",
+      anonKey: "sb_publishable_jTT3KHtFReAwf3FpSPrHTw_IvbuxAKO"
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+  
+</body>
+</html>
