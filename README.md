@@ -36,3 +36,4 @@ Si no configuras Supabase, la app funciona igual con contador local del navegado
 - Vista responsive mejorada para pantallas medianas.
 # TH-Cotizacion_Form
 # TH-Cotizacion_Form
+# TH-Cotizacion_Form
