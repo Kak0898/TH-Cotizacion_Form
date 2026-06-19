@@ -35,3 +35,4 @@ Si no configuras Supabase, la app funciona igual con contador local del navegado
 - Los campos ya no se cortan horizontalmente.
 - Vista responsive mejorada para pantallas medianas.
 # TH-Cotizacion_Form
+# TH-Cotizacion_Form
