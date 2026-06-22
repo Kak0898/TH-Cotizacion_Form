@@ -888,10 +888,10 @@ function render(){
         <div class="obs-totals">
           <div class="obs"><b>OBSERVACIONES:</b>\n${esc(state.observaciones)}\n\n<b>Garantía:</b> ${esc(state.garantia)}${state.condiciones ? `\n<b>Condiciones:</b> ${esc(state.condiciones)}` : ''}</div>
           <table class="totals">
-            <tr><td>SUBTOTAL</td><td class="">${money(t.neto)}</td></tr>
-            <tr><td>NETO</td><td class="">${money(t.neto)}</td></tr>
-            <tr><td>I.V.A. (19%)</td><td class="">${money(t.iva)}</td></tr>
-            <tr class="total-final"><td>TOTAL</td><td class="">${money(t.total)}</td></tr>
+            <tr><td>SUBTOTAL</td><td class="num">${money(t.neto)}</td></tr>
+            <tr><td>NETO</td><td class="num">${money(t.neto)}</td></tr>
+            <tr><td>I.V.A. (19%)</td><td class="num">${money(t.iva)}</td></tr>
+            <tr class="total-final"><td>TOTAL</td><td class="num">${money(t.total)}</td></tr>
           </table>
         </div>
 
