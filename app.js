@@ -3,6 +3,9 @@ const BASE_LAST_COTIZACION = 11865;
 const LOGO_SRC = 'assets/th-logo.jpeg';
 const CLP = new Intl.NumberFormat('es-CL',{style:'currency',currency:'CLP',maximumFractionDigits:0});
 const today = new Date().toISOString().slice(0,10);
+const AUTOSAVE_KEY = 'th_current_autosave';
+const LEGACY_CURRENT_KEY = 'th_current';
+const AUTOSAVE_TTL_MS = 24 * 60 * 60 * 1000;
 const REGIONES_COMUNAS = [
   {region:'Arica y Parinacota', comunas:['Arica','Camarones','Putre','General Lagos']},
   {region:'Tarapacá', comunas:['Iquique','Alto Hospicio','Pozo Almonte','Camiña','Colchane','Huara','Pica']},
@@ -61,11 +64,17 @@ let state = loadCurrent();
 let saved = JSON.parse(localStorage.getItem('th_saved')||'[]');
 
 function loadCurrent(){
-  let cached = null;
-  try { cached = JSON.parse(localStorage.getItem('th_current') || 'null'); } catch(e) { cached = null; }
-  const shouldRestoreDraft = cached && !cached.savedAt && !cached.id && !cached.numeroReservado;
-  if (cached && !shouldRestoreDraft) localStorage.removeItem('th_current');
+  let autosave = null;
+  try { autosave = JSON.parse(localStorage.getItem(AUTOSAVE_KEY) || 'null'); } catch(e) { autosave = null; }
+  localStorage.removeItem(LEGACY_CURRENT_KEY);
+  const isFreshAutosave = autosave?.doc && autosave.savedAtMs && Date.now() - autosave.savedAtMs <= AUTOSAVE_TTL_MS;
+  if (autosave && !isFreshAutosave) localStorage.removeItem(AUTOSAVE_KEY);
+  const cached = isFreshAutosave ? autosave.doc : null;
+  const shouldRestoreDraft = Boolean(cached && !cached.id && !cached.numeroReservado);
   const doc = shouldRestoreDraft ? {...defaultDoc, ...cached} : {...defaultDoc};
+  if (shouldRestoreDraft) {
+    saveStatus = { type:'warn', text:'Borrador local recuperado. Se conservará por 24 horas.' };
+  }
   if (doc.ciudad === 'Santiago') doc.ciudad = 'Región Metropolitana de Santiago';
   if (!REGIONES_COMUNAS.some(r => r.region === doc.ciudad)) {
     doc.ciudad = '';
@@ -131,7 +140,8 @@ function normalizeReferencias(doc){
 }
 function allItems(){return (state.referencias || []).flatMap(ref=>ref.items || [])}
 function totals(){const neto=allItems().reduce((s,it)=>s+subtotalItem(it),0); const iva=neto*IVA; return {neto,iva,total:neto+iva}}
-function persist(){localStorage.setItem('th_current',JSON.stringify(state))}
+function persist(){localStorage.setItem(AUTOSAVE_KEY,JSON.stringify({savedAtMs:Date.now(),doc:state}))}
+function clearAutosave(){localStorage.removeItem(AUTOSAVE_KEY); localStorage.removeItem(LEGACY_CURRENT_KEY)}
 function markDirty(){state.dirty=true; state.savedAt=null; state.savedInSupabase=false; saveStatus={type:'warn', text:'Hay cambios sin guardar. Guarda antes de imprimir o emitir.'};}
 function setSilent(k,v){state[k]=v; markDirty(); persist()}
 function syncReferenciaText(){state.referencia=(state.referencias||[]).map(ref=>ref.texto).filter(Boolean).join('\n'); state.items=allItems()}
@@ -150,6 +160,16 @@ function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&l
 function canExport(){return Boolean(state.savedAt && !state.dirty)}
 function canEmit(){return Boolean(!state.numeroReservado && state.id && state.savedAt && !state.dirty)}
 function errorText(err){return err?.message || err?.details || err?.hint || String(err || 'Error desconocido')}
+function autosaveText(){
+  try {
+    const raw = JSON.parse(localStorage.getItem(AUTOSAVE_KEY) || 'null');
+    if (!raw?.savedAtMs) return '';
+    const expires = new Date(raw.savedAtMs + AUTOSAVE_TTL_MS).toLocaleString('es-CL');
+    return `Borrador local guardado automáticamente. Disponible hasta: ${expires}`;
+  } catch(e) {
+    return '';
+  }
+}
 function referenciasTexto(){return (state.referencias || []).map(r=>r.texto).filter(r=>String(r||'').trim()).join('\n')}
 function getComunas(region){return REGIONES_COMUNAS.find(r=>r.region===region)?.comunas || []}
 function options(list, selected, placeholder){
@@ -336,6 +356,7 @@ async function loadSavedDocs(){
 }
 
 async function newDoc(){
+  clearAutosave();
   state = {
     ...defaultDoc,
     id:null,
@@ -354,7 +375,6 @@ async function newDoc(){
     dirty:true
   };
   saveStatus = { type:'warn', text:'Nueva pre-cotización sin guardar. Guarda para imprimir/enviar al cliente.' };
-  persist();
   render();
 }
 
@@ -380,7 +400,7 @@ async function saveDoc(){
       saveStatus = state.numeroReservado
         ? { type:'ok', text:'Cotización final guardada en Supabase. PDF / Imprimir habilitado.' }
         : { type:'ok', text:'Pre-cotización guardada. Puedes imprimir/enviar al cliente o emitir si fue aprobada.' };
-      persist();
+      clearAutosave();
       await loadSavedDocs();
     } else {
       state.savedAt = new Date().toLocaleString('es-CL');
@@ -393,7 +413,7 @@ async function saveDoc(){
       if (existing >= 0) saved[existing] = record; else saved.unshift(record);
       localStorage.setItem('th_saved',JSON.stringify(saved.slice(0,50)));
       saveStatus = { type:'warn', text:'Guardado local. Para uso multiusuario necesitas Supabase.' };
-      persist();
+      clearAutosave();
     }
   } catch (err) {
     console.error(err);
@@ -422,7 +442,7 @@ async function emitDoc(){
       if (error) throw error;
       state = docFromDb(data);
       saveStatus = { type:'ok', text:'Cotización emitida con número final seguro.' };
-      persist();
+      clearAutosave();
       await loadSavedDocs();
     } else {
       const next = localNextNumber();
@@ -439,7 +459,7 @@ async function emitDoc(){
       const record = {id, doc:JSON.parse(JSON.stringify(state)), source:'local'};
       if (existing >= 0) saved[existing] = record; else saved.unshift(record);
       localStorage.setItem('th_saved',JSON.stringify(saved.slice(0,50)));
-      persist();
+      clearAutosave();
     }
   } catch (err) {
     console.error(err);
@@ -463,7 +483,7 @@ function loadDoc(id){
   saveStatus = state.numeroReservado
     ? { type:'ok', text:'Cotización cargada. PDF / Imprimir habilitado.' }
     : { type:'ok', text:'Pre-cotización cargada. Puedes imprimirla, editarla o emitirla si fue aprobada.' };
-  persist();
+  clearAutosave();
   render();
 }
 async function deleteSaved(id){
@@ -501,6 +521,7 @@ function render(){
       <div class="section-title">Documento</div>
       <div class="status"><span class="dot ${statusClass}"></span><span>${esc(counterStatus.text)}</span></div>
       <div class="status"><span class="dot ${saveClass}"></span><span>${esc(saveStatus.text)}</span></div>
+      ${autosaveText() ? `<div class="status"><span class="dot warn"></span><span>${esc(autosaveText())}</span></div>` : ''}
       <div class="grid">
         <div class="field">
           <label>Tipo</label>
