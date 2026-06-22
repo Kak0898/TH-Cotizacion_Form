@@ -73,7 +73,7 @@ function initSupabase(){
     counterStatus = { type:'ok', text:'Supabase conectado para pre-cotizaciones y emisión segura.' };
     saveStatus = state.savedAt && !state.dirty
       ? { type:'ok', text:'Documento guardado. PDF / Imprimir habilitado.' }
-      : { type:'warn', text:'Supabase conectado. Guarda el documento para activar PDF / Imprimir.' };
+      : { type:'warn', text:'Supabase conectado. Guarda la PRE para imprimirla o emitirla.' };
   }
 }
 
@@ -83,13 +83,14 @@ function money(v){
 function subtotalItem(it){return (Number(it.cantidad)||0)*(Number(it.precio)||0)*(1-(Number(it.dscto)||0)/100)}
 function totals(){const neto=state.items.reduce((s,it)=>s+subtotalItem(it),0); const iva=neto*IVA; return {neto,iva,total:neto+iva}}
 function persist(){localStorage.setItem('th_current',JSON.stringify(state))}
-function markDirty(){state.dirty=true; state.savedAt=null; state.savedInSupabase=false; saveStatus={type:'warn', text:'Hay cambios sin guardar. PDF / Imprimir bloqueado.'};}
+function markDirty(){state.dirty=true; state.savedAt=null; state.savedInSupabase=false; saveStatus={type:'warn', text:'Hay cambios sin guardar. Guarda antes de imprimir o emitir.'};}
 function setSilent(k,v){state[k]=v; markDirty(); persist()}
 function setItemSilent(i,k,v){state.items[i][k]=v; markDirty(); persist()}
 function addItem(){state.items.push({codigo:'',descripcion:'',cantidad:1,um:'UN',precio:0,dscto:0});markDirty();persist();render()}
 function delItem(i){state.items.splice(i,1);markDirty();persist();render()}
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
-function canExport(){return Boolean(state.numeroReservado && state.savedAt && !state.dirty)}
+function canExport(){return Boolean(state.savedAt && !state.dirty)}
+function canEmit(){return Boolean(!state.numeroReservado && state.id && state.savedAt && !state.dirty)}
 function errorText(err){return err?.message || err?.details || err?.hint || String(err || 'Error desconocido')}
 
 function localNextNumber(){
@@ -275,7 +276,7 @@ async function newDoc(){
     savedInSupabase:false,
     dirty:true
   };
-  saveStatus = { type:'warn', text:'Nueva pre-cotización sin guardar. Emite para obtener número final.' };
+  saveStatus = { type:'warn', text:'Nueva pre-cotización sin guardar. Guarda para imprimir/enviar al cliente.' };
   persist();
   render();
 }
@@ -301,7 +302,7 @@ async function saveDoc(){
       state = docFromDb(data);
       saveStatus = state.numeroReservado
         ? { type:'ok', text:'Cotización final guardada en Supabase. PDF / Imprimir habilitado.' }
-        : { type:'ok', text:'Pre-cotización guardada. Puedes emitir cotización final cuando esté lista.' };
+        : { type:'ok', text:'Pre-cotización guardada. Puedes imprimir/enviar al cliente o emitir si fue aprobada.' };
       persist();
       await loadSavedDocs();
     } else {
@@ -328,11 +329,14 @@ async function saveDoc(){
 
 async function emitDoc(){
   if (savingDoc || state.numeroReservado) return;
+  if (!canEmit()) {
+    saveStatus = { type:'warn', text:'Primero guarda la pre-cotización actual antes de emitir.' };
+    render();
+    return;
+  }
   saveStatus = { type:'warn', text:'Emitiendo cotización final...' };
   render();
   try {
-    if (!state.id || state.dirty) await saveDoc();
-    if (supabaseClient && !state.id) throw new Error('Primero se debe guardar la pre-cotización.');
     savingDoc = true;
     render();
 
@@ -381,7 +385,7 @@ function loadDoc(id){
   state.savedAt = state.savedAt || new Date().toISOString();
   saveStatus = state.numeroReservado
     ? { type:'ok', text:'Cotización cargada. PDF / Imprimir habilitado.' }
-    : { type:'ok', text:'Pre-cotización cargada. Puedes editarla o emitirla.' };
+    : { type:'ok', text:'Pre-cotización cargada. Puedes imprimirla, editarla o emitirla si fue aprobada.' };
   persist();
   render();
 }
@@ -403,8 +407,12 @@ function render(){
   const statusClass = counterStatus.type === 'ok' ? 'ok' : counterStatus.type === 'bad' ? 'bad' : 'warn';
   const saveClass = saveStatus.type === 'ok' ? 'ok' : saveStatus.type === 'bad' ? 'bad' : 'warn';
   const exportDisabled = !canExport();
+  const emitDisabled = !canEmit() || savingDoc;
   const docLabel = state.numeroReservado ? 'COTIZACIÓN' : 'PRE-COTIZACIÓN';
   const displayNumber = loadingNumber ? '...' : (state.numeroReservado ? state.numero : (state.preNumero || 'SIN GUARDAR'));
+  const printTitle = state.numeroReservado ? 'Exportar PDF / Imprimir' : 'Imprimir PRE / PDF';
+  const exportTitle = exportDisabled ? 'Primero guarda el documento actual' : '';
+  const emitTitle = emitDisabled && !state.numeroReservado ? 'Primero guarda la PRE sin cambios pendientes' : '';
   const app = document.getElementById('app');
   if (!app) return;
   app.innerHTML=`
@@ -467,9 +475,9 @@ function render(){
       <div class="field"><label>Condiciones</label><textarea oninput="setSilent('condiciones',this.value)" onchange="render()">${esc(state.condiciones||'')}</textarea></div>
 
       <div class="btns sticky-actions">
-        <button class="green" onclick="window.print()" ${exportDisabled ? 'disabled title="Primero emite y guarda la cotización final"' : ''}>Exportar PDF / Imprimir</button>
+        <button class="green" onclick="window.print()" ${exportDisabled ? `disabled title="${esc(exportTitle)}"` : ''}>${esc(printTitle)}</button>
         <button class="yellow" onclick="saveDoc()" ${savingDoc?'disabled':''}>${savingDoc?'Guardando...':(state.numeroReservado?'Guardar cambios':'Guardar PRE')}</button>
-        <button class="primary" onclick="emitDoc()" ${state.numeroReservado || savingDoc?'disabled':''}>Emitir cotización</button>
+        <button class="primary" onclick="emitDoc()" ${emitDisabled?'disabled':''} ${emitTitle ? `title="${esc(emitTitle)}"` : ''}>Emitir cotización</button>
         <button class="ghost" onclick="newDoc()" ${loadingNumber || savingDoc?'disabled':''}>+ Nueva PRE</button>
       </div>
 
