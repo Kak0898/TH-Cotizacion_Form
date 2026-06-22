@@ -449,7 +449,7 @@ function render(){
         <div class="item-row">
           <div class="grid">
             <div class="field"><label>Código</label><input value="${esc(it.codigo)}" oninput="setItemSilent(${i},'codigo',this.value)" onchange="render()"></div>
-            <div class="field"><label>Descripción</label><input value="${esc(it.descripcion)}" oninput="setItemSilent(${i},'descripcion',this.value)" onchange="render()"></div>
+            <div class="field item-description-field"><label>Descripción</label><textarea class="item-description-input" oninput="setItemSilent(${i},'descripcion',this.value)" onchange="render()">${esc(it.descripcion)}</textarea></div>
             <div class="field"><label>Cantidad</label><input type="number" value="${esc(it.cantidad)}" oninput="setItemSilent(${i},'cantidad',this.value)" onchange="render()"></div>
             <div class="field"><label>U.M.</label><input value="${esc(it.um)}" oninput="setItemSilent(${i},'um',this.value)" onchange="render()"></div>
             <div class="field"><label>Precio</label><input type="number" value="${esc(it.precio)}" oninput="setItemSilent(${i},'precio',this.value)" onchange="render()"></div>
