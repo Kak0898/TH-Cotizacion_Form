@@ -42,11 +42,11 @@ const defaultDoc = {
   ciudad:'',
   email:'',
   referencia:'',
-  referencias:[''],
+  referencias:[{texto:'', items:[{codigo:'', descripcion:'', cantidad:1, um:'UN', precio:0, dscto:0}]}],
   garantia:'30 días',
   condiciones:'',
   observaciones:'',
-  items:[{codigo:'', descripcion:'', cantidad:1, um:'UN', precio:0, dscto:0}],
+  items:[],
   savedAt:null,
   savedInSupabase:false,
   dirty:true
@@ -75,11 +75,7 @@ function loadCurrent(){
   }
   doc.rut = formatRut(doc.rut);
   doc.telefono = formatPhone(doc.telefono);
-  if (!Array.isArray(doc.referencias)) {
-    doc.referencias = doc.referencia ? [doc.referencia] : [''];
-  }
-  if (!doc.referencias.length) doc.referencias = [''];
-  doc.referencia = doc.referencias.filter(Boolean).join('\n');
+  normalizeReferencias(doc);
   doc.estado = doc.estado || (doc.numeroReservado ? 'cotizacion_emitida' : 'pre_cotizacion');
   doc.tipo = doc.numeroReservado ? 'COTIZACIÓN' : 'PRE-COTIZACIÓN';
   doc.preNumero = doc.preNumero || '';
@@ -91,9 +87,6 @@ function loadCurrent(){
       doc.estado = 'pre_cotizacion';
       doc.tipo = 'PRE-COTIZACIÓN';
     }
-  }
-  if (!Array.isArray(doc.items) || !doc.items.length) {
-    doc.items = [{codigo:'', descripcion:'', cantidad:1, um:'UN', precio:0, dscto:0}];
   }
   if (doc.savedAt && !doc.dirty) {
     saveStatus = { type:'ok', text:'Documento guardado. PDF / Imprimir habilitado.' };
@@ -115,31 +108,49 @@ function initSupabase(){
 function money(v){
   return CLP.format(Math.round(Number(v)||0)).replace(/^CLP\s?/, '').trim();
 }
+function blankItem(){return {codigo:'', descripcion:'', cantidad:1, um:'UN', precio:0, dscto:0}}
 function subtotalItem(it){return (Number(it.cantidad)||0)*(Number(it.precio)||0)*(1-(Number(it.dscto)||0)/100)}
-function totals(){const neto=state.items.reduce((s,it)=>s+subtotalItem(it),0); const iva=neto*IVA; return {neto,iva,total:neto+iva}}
+function normalizeReferencias(doc){
+  const itemsAreSections = Array.isArray(doc.items) && doc.items.length && Array.isArray(doc.items[0]?.items);
+  if (itemsAreSections && (!Array.isArray(doc.referencias) || typeof doc.referencias[0] === 'string')) {
+    doc.referencias = doc.items;
+  }
+  const oldItems = Array.isArray(doc.items) && doc.items.length && !itemsAreSections ? doc.items : [blankItem()];
+  if (!Array.isArray(doc.referencias) || !doc.referencias.length) {
+    doc.referencias = [{texto:doc.referencia || '', items:oldItems}];
+  } else if (typeof doc.referencias[0] === 'string') {
+    doc.referencias = doc.referencias.map((ref, i)=>({texto:ref || '', items:i === 0 ? oldItems : [blankItem()]}));
+  } else {
+    doc.referencias = doc.referencias.map((ref)=>({
+      texto:ref?.texto || '',
+      items:Array.isArray(ref?.items) && ref.items.length ? ref.items : [blankItem()]
+    }));
+  }
+  doc.items = doc.referencias.flatMap(ref=>ref.items || []);
+  doc.referencia = doc.referencias.map(ref=>ref.texto).filter(Boolean).join('\n');
+}
+function allItems(){return (state.referencias || []).flatMap(ref=>ref.items || [])}
+function totals(){const neto=allItems().reduce((s,it)=>s+subtotalItem(it),0); const iva=neto*IVA; return {neto,iva,total:neto+iva}}
 function persist(){localStorage.setItem('th_current',JSON.stringify(state))}
 function markDirty(){state.dirty=true; state.savedAt=null; state.savedInSupabase=false; saveStatus={type:'warn', text:'Hay cambios sin guardar. Guarda antes de imprimir o emitir.'};}
 function setSilent(k,v){state[k]=v; markDirty(); persist()}
-function setItemSilent(i,k,v){state.items[i][k]=v; markDirty(); persist()}
-function setReferenciaSilent(i,v){state.referencias[i]=v; state.referencia=state.referencias.filter(Boolean).join('\n'); markDirty(); persist()}
-function addReferencia(){state.referencias.push(''); markDirty(); persist(); render()}
-function delReferencia(i){state.referencias.splice(i,1); if (!state.referencias.length) state.referencias=['']; state.referencia=state.referencias.filter(Boolean).join('\n'); markDirty(); persist(); render()}
+function syncReferenciaText(){state.referencia=(state.referencias||[]).map(ref=>ref.texto).filter(Boolean).join('\n'); state.items=allItems()}
+function setRefItemSilent(r,i,k,v){state.referencias[r].items[i][k]=v; syncReferenciaText(); markDirty(); persist()}
+function setReferenciaSilent(i,v){state.referencias[i].texto=v; syncReferenciaText(); markDirty(); persist()}
+function addReferencia(){state.referencias.push({texto:'', items:[blankItem()]}); syncReferenciaText(); markDirty(); persist(); render()}
+function delReferencia(i){state.referencias.splice(i,1); if (!state.referencias.length) state.referencias=[{texto:'', items:[blankItem()]}]; syncReferenciaText(); markDirty(); persist(); render()}
+function addRefItem(r){state.referencias[r].items.push(blankItem()); syncReferenciaText(); markDirty(); persist(); render()}
+function delRefItem(r,i){state.referencias[r].items.splice(i,1); if (!state.referencias[r].items.length) state.referencias[r].items=[blankItem()]; syncReferenciaText(); markDirty(); persist(); render()}
 function setRutSilent(v){state.rut=formatRut(v); markDirty(); persist()}
 function setPhoneSilent(v){state.telefono=formatPhone(v); markDirty(); persist()}
 function setRegionSilent(v){state.ciudad=v; if (!getComunas(v).includes(state.comuna)) state.comuna=''; markDirty(); persist(); render()}
-function addItem(){state.items.push({codigo:'',descripcion:'',cantidad:1,um:'UN',precio:0,dscto:0});markDirty();persist();render()}
-function delItem(i){state.items.splice(i,1);markDirty();persist();render()}
+function addItem(){addRefItem(0)}
+function delItem(i){delRefItem(0,i)}
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
 function canExport(){return Boolean(state.savedAt && !state.dirty)}
 function canEmit(){return Boolean(!state.numeroReservado && state.id && state.savedAt && !state.dirty)}
 function errorText(err){return err?.message || err?.details || err?.hint || String(err || 'Error desconocido')}
-function referenciasTexto(){return (state.referencias || []).filter(r=>String(r||'').trim()).join('\n')}
-function referenciasHtml(){
-  const refs = (state.referencias || []).filter(r=>String(r||'').trim());
-  if (!refs.length) return '';
-  if (refs.length === 1) return `Referencia: ${esc(refs[0])}`;
-  return `Referencias:<br>${refs.map((r,i)=>`${i+1}. ${esc(r)}`).join('<br>')}`;
-}
+function referenciasTexto(){return (state.referencias || []).map(r=>r.texto).filter(r=>String(r||'').trim()).join('\n')}
 function getComunas(region){return REGIONES_COMUNAS.find(r=>r.region===region)?.comunas || []}
 function options(list, selected, placeholder){
   return `<option value="">${esc(placeholder)}</option>` + list.map(v=>`<option value="${esc(v)}" ${v===selected?'selected':''}>${esc(v)}</option>`).join('');
@@ -259,7 +270,7 @@ function buildDbPayload(){
     observaciones: state.observaciones || '',
     garantia: state.garantia || '',
     condiciones: state.condiciones || '',
-    items: state.items || [],
+    items: state.referencias || [],
     subtotal: Math.round(t.neto),
     neto: Math.round(t.neto),
     iva: Math.round(t.iva),
@@ -271,7 +282,7 @@ function buildDbPayload(){
 
 function docFromDb(row){
   const d = row.data || {};
-  return {
+  const doc = {
     ...defaultDoc,
     ...d,
     id: row.id,
@@ -302,6 +313,8 @@ function docFromDb(row){
     savedInSupabase: true,
     dirty: false
   };
+  normalizeReferencias(doc);
+  return doc;
 }
 
 async function loadSavedDocs(){
@@ -334,8 +347,8 @@ async function newDoc(){
     fecha:today,
     vcto:'',
     cliente:'', contacto:'', rut:'', direccion:'', giro:'', comuna:'', telefono:'', ciudad:'', email:'',
-    referencia:'', referencias:[''], garantia:'30 días', condiciones:'',
-    items:[{codigo:'',descripcion:'',cantidad:1,um:'UN',precio:0,dscto:0}],
+    referencia:'', referencias:[{texto:'', items:[blankItem()]}], garantia:'30 días', condiciones:'',
+    items:[],
     savedAt:null,
     savedInSupabase:false,
     dirty:true
@@ -516,28 +529,29 @@ function render(){
       </div>
 
       <div class="section-title">Referencias</div>
-      ${(state.referencias || ['']).map((ref,i)=>`
-        <div class="reference-row">
-          <div class="field"><label>Referencia ${i+1}</label><textarea oninput="setReferenciaSilent(${i},this.value)" onchange="render()">${esc(ref)}</textarea></div>
-          <button class="danger" onclick="delReferencia(${i})" ${(state.referencias || []).length <= 1 ? 'disabled' : ''}>Eliminar</button>
+      ${(state.referencias || []).map((ref,r)=>`
+        <div class="reference-block">
+          <div class="reference-row">
+            <div class="field"><label>Referencia ${r+1}</label><textarea oninput="setReferenciaSilent(${r},this.value)" onchange="render()">${esc(ref.texto)}</textarea></div>
+            <button class="danger" onclick="delReferencia(${r})" ${(state.referencias || []).length <= 1 ? 'disabled' : ''}>Eliminar referencia</button>
+          </div>
+          <div class="section-title item-section-title">Ítems referencia ${r+1}</div>
+          ${(ref.items || []).map((it,i)=>`
+            <div class="item-row">
+              <div class="grid">
+                <div class="field"><label>Código</label><input value="${esc(it.codigo)}" oninput="setRefItemSilent(${r},${i},'codigo',this.value)" onchange="render()"></div>
+                <div class="field item-description-field"><label>Descripción</label><textarea class="item-description-input" oninput="setRefItemSilent(${r},${i},'descripcion',this.value)" onchange="render()">${esc(it.descripcion)}</textarea></div>
+                <div class="field"><label>Cantidad</label><input type="number" value="${esc(it.cantidad)}" oninput="setRefItemSilent(${r},${i},'cantidad',this.value)" onchange="render()"></div>
+                <div class="field"><label>U.M.</label><input value="${esc(it.um)}" oninput="setRefItemSilent(${r},${i},'um',this.value)" onchange="render()"></div>
+                <div class="field"><label>Precio</label><input type="number" value="${esc(it.precio)}" oninput="setRefItemSilent(${r},${i},'precio',this.value)" onchange="render()"></div>
+                <div class="field"><label>Dscto %</label><input type="number" value="${esc(it.dscto)}" oninput="setRefItemSilent(${r},${i},'dscto',this.value)" onchange="render()"></div>
+                <div class="field"><label>Subtotal</label><input readonly value="${money(subtotalItem(it))}"></div>
+                <button class="danger" onclick="delRefItem(${r},${i})">Eliminar ítem</button>
+              </div>
+            </div>`).join('')}
+          <button class="ghost" onclick="addRefItem(${r})">+ Agregar ítem a referencia ${r+1}</button>
         </div>`).join('')}
       <button class="ghost" onclick="addReferencia()">+ Agregar referencia</button>
-
-      <div class="section-title">Ítems</div>
-      ${state.items.map((it,i)=>`
-        <div class="item-row">
-          <div class="grid">
-            <div class="field"><label>Código</label><input value="${esc(it.codigo)}" oninput="setItemSilent(${i},'codigo',this.value)" onchange="render()"></div>
-            <div class="field item-description-field"><label>Descripción</label><textarea class="item-description-input" oninput="setItemSilent(${i},'descripcion',this.value)" onchange="render()">${esc(it.descripcion)}</textarea></div>
-            <div class="field"><label>Cantidad</label><input type="number" value="${esc(it.cantidad)}" oninput="setItemSilent(${i},'cantidad',this.value)" onchange="render()"></div>
-            <div class="field"><label>U.M.</label><input value="${esc(it.um)}" oninput="setItemSilent(${i},'um',this.value)" onchange="render()"></div>
-            <div class="field"><label>Precio</label><input type="number" value="${esc(it.precio)}" oninput="setItemSilent(${i},'precio',this.value)" onchange="render()"></div>
-            <div class="field"><label>Dscto %</label><input type="number" value="${esc(it.dscto)}" oninput="setItemSilent(${i},'dscto',this.value)" onchange="render()"></div>
-            <div class="field"><label>Subtotal</label><input readonly value="${money(subtotalItem(it))}"></div>
-            <button class="danger" onclick="delItem(${i})">Eliminar</button>
-          </div>
-        </div>`).join('')}
-      <button class="ghost" onclick="addItem()">+ Agregar ítem</button>
 
       <div class="section-title">Observaciones</div>
       <div class="field"><label>Observaciones</label><textarea oninput="setSilent('observaciones',this.value)" onchange="render()">${esc(state.observaciones)}</textarea></div>
@@ -588,12 +602,13 @@ function render(){
           <tr><td class="label">E-mail</td><td>${esc(state.email)}</td><td class="label">Fecha</td><td>${esc(state.fecha)}</td></tr>
         </table>
 
-        <div class="ref">${referenciasHtml()}</div>
-
-        <table class="items">
-          <tr><th>COD.</th><th>DESCRIPCIÓN</th><th>CANT.</th><th>U.M.</th><th>PRECIO UNIT.</th><th>DSCTO.</th><th>SUBTOTAL</th></tr>
-          ${state.items.map(it=>`<tr><td>${esc(it.codigo)}</td><td class="desc-cell">${esc(it.descripcion)}</td><td class="num">${esc(it.cantidad)}</td><td class="center">${esc(it.um)}</td><td class="num">${money(it.precio)}</td><td class="num">${esc(it.dscto||0)}%</td><td class="num">${money(subtotalItem(it))}</td></tr>`).join('')}
-        </table>
+        ${(state.referencias || []).map((ref,r)=>`
+          <div class="ref">${r+1}. ${esc(ref.texto || `Referencia ${r+1}`)}</div>
+          <table class="items">
+            <tr><th>COD.</th><th>DESCRIPCIÓN</th><th>CANT.</th><th>U.M.</th><th>PRECIO UNIT.</th><th>DSCTO.</th><th>SUBTOTAL</th></tr>
+            ${(ref.items || []).map(it=>`<tr><td>${esc(it.codigo)}</td><td class="desc-cell">${esc(it.descripcion)}</td><td class="num">${esc(it.cantidad)}</td><td class="center">${esc(it.um)}</td><td class="num">${money(it.precio)}</td><td class="num">${esc(it.dscto||0)}%</td><td class="num">${money(subtotalItem(it))}</td></tr>`).join('')}
+          </table>
+        `).join('')}
 
         <div class="obs-totals">
           <div class="obs"><b>OBSERVACIONES:</b>\n${esc(state.observaciones)}\n\n<b>Garantía:</b> ${esc(state.garantia)}${state.condiciones ? `\n<b>Condiciones:</b> ${esc(state.condiciones)}` : ''}</div>
