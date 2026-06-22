@@ -42,6 +42,7 @@ const defaultDoc = {
   ciudad:'',
   email:'',
   referencia:'',
+  referencias:[''],
   garantia:'30 días',
   condiciones:'',
   observaciones:'',
@@ -74,6 +75,11 @@ function loadCurrent(){
   }
   doc.rut = formatRut(doc.rut);
   doc.telefono = formatPhone(doc.telefono);
+  if (!Array.isArray(doc.referencias)) {
+    doc.referencias = doc.referencia ? [doc.referencia] : [''];
+  }
+  if (!doc.referencias.length) doc.referencias = [''];
+  doc.referencia = doc.referencias.filter(Boolean).join('\n');
   doc.estado = doc.estado || (doc.numeroReservado ? 'cotizacion_emitida' : 'pre_cotizacion');
   doc.tipo = doc.numeroReservado ? 'COTIZACIÓN' : 'PRE-COTIZACIÓN';
   doc.preNumero = doc.preNumero || '';
@@ -115,6 +121,9 @@ function persist(){localStorage.setItem('th_current',JSON.stringify(state))}
 function markDirty(){state.dirty=true; state.savedAt=null; state.savedInSupabase=false; saveStatus={type:'warn', text:'Hay cambios sin guardar. Guarda antes de imprimir o emitir.'};}
 function setSilent(k,v){state[k]=v; markDirty(); persist()}
 function setItemSilent(i,k,v){state.items[i][k]=v; markDirty(); persist()}
+function setReferenciaSilent(i,v){state.referencias[i]=v; state.referencia=state.referencias.filter(Boolean).join('\n'); markDirty(); persist()}
+function addReferencia(){state.referencias.push(''); markDirty(); persist(); render()}
+function delReferencia(i){state.referencias.splice(i,1); if (!state.referencias.length) state.referencias=['']; state.referencia=state.referencias.filter(Boolean).join('\n'); markDirty(); persist(); render()}
 function setRutSilent(v){state.rut=formatRut(v); markDirty(); persist()}
 function setPhoneSilent(v){state.telefono=formatPhone(v); markDirty(); persist()}
 function setRegionSilent(v){state.ciudad=v; if (!getComunas(v).includes(state.comuna)) state.comuna=''; markDirty(); persist(); render()}
@@ -124,6 +133,13 @@ function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&l
 function canExport(){return Boolean(state.savedAt && !state.dirty)}
 function canEmit(){return Boolean(!state.numeroReservado && state.id && state.savedAt && !state.dirty)}
 function errorText(err){return err?.message || err?.details || err?.hint || String(err || 'Error desconocido')}
+function referenciasTexto(){return (state.referencias || []).filter(r=>String(r||'').trim()).join('\n')}
+function referenciasHtml(){
+  const refs = (state.referencias || []).filter(r=>String(r||'').trim());
+  if (!refs.length) return '';
+  if (refs.length === 1) return `Referencia: ${esc(refs[0])}`;
+  return `Referencias:<br>${refs.map((r,i)=>`${i+1}. ${esc(r)}`).join('<br>')}`;
+}
 function getComunas(region){return REGIONES_COMUNAS.find(r=>r.region===region)?.comunas || []}
 function options(list, selected, placeholder){
   return `<option value="">${esc(placeholder)}</option>` + list.map(v=>`<option value="${esc(v)}" ${v===selected?'selected':''}>${esc(v)}</option>`).join('');
@@ -239,7 +255,7 @@ function buildDbPayload(){
     cliente_telefono: state.telefono || '',
     cliente_ciudad: state.ciudad || '',
     cliente_email: state.email || '',
-    referencia: state.referencia || '',
+    referencia: referenciasTexto(),
     observaciones: state.observaciones || '',
     garantia: state.garantia || '',
     condiciones: state.condiciones || '',
@@ -277,6 +293,7 @@ function docFromDb(row){
     ciudad: row.cliente_ciudad || d.ciudad || '',
     email: row.cliente_email || d.email || '',
     referencia: row.referencia || d.referencia || '',
+    referencias: Array.isArray(d.referencias) ? d.referencias : ((row.referencia || d.referencia) ? String(row.referencia || d.referencia).split('\n') : ['']),
     observaciones: row.observaciones || d.observaciones || '',
     garantia: row.garantia || d.garantia || '',
     condiciones: row.condiciones || d.condiciones || '',
@@ -317,7 +334,7 @@ async function newDoc(){
     fecha:today,
     vcto:'',
     cliente:'', contacto:'', rut:'', direccion:'', giro:'', comuna:'', telefono:'', ciudad:'', email:'',
-    referencia:'', garantia:'30 días', condiciones:'',
+    referencia:'', referencias:[''], garantia:'30 días', condiciones:'',
     items:[{codigo:'',descripcion:'',cantidad:1,um:'UN',precio:0,dscto:0}],
     savedAt:null,
     savedInSupabase:false,
@@ -498,7 +515,13 @@ function render(){
         <div class="field"><label>E-mail</label><input value="${esc(state.email)}" oninput="setSilent('email',this.value)" onchange="render()"></div>
       </div>
 
-      <div class="field"><label>Referencia</label><textarea oninput="setSilent('referencia',this.value)" onchange="render()">${esc(state.referencia)}</textarea></div>
+      <div class="section-title">Referencias</div>
+      ${(state.referencias || ['']).map((ref,i)=>`
+        <div class="reference-row">
+          <div class="field"><label>Referencia ${i+1}</label><textarea oninput="setReferenciaSilent(${i},this.value)" onchange="render()">${esc(ref)}</textarea></div>
+          <button class="danger" onclick="delReferencia(${i})" ${(state.referencias || []).length <= 1 ? 'disabled' : ''}>Eliminar</button>
+        </div>`).join('')}
+      <button class="ghost" onclick="addReferencia()">+ Agregar referencia</button>
 
       <div class="section-title">Ítems</div>
       ${state.items.map((it,i)=>`
@@ -565,7 +588,7 @@ function render(){
           <tr><td class="label">E-mail</td><td>${esc(state.email)}</td><td class="label">Fecha</td><td>${esc(state.fecha)}</td></tr>
         </table>
 
-        <div class="ref">Referencia: ${esc(state.referencia)}</div>
+        <div class="ref">${referenciasHtml()}</div>
 
         <table class="items">
           <tr><th>COD.</th><th>DESCRIPCIÓN</th><th>CANT.</th><th>U.M.</th><th>PRECIO UNIT.</th><th>DSCTO.</th><th>SUBTOTAL</th></tr>
