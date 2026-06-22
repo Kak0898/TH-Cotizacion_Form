@@ -32,20 +32,20 @@ const defaultDoc = {
   fecha:today,
   vcto:'',
   rutEmpresa:'76.171.450-3',
-  cliente:'Logística Transportes y Servicios Ltda.',
-  contacto:'Sr. Guillermo Tell',
-  rut:'78.954.200-7',
-  direccion:'Av. Eduardo Frei Montalva 8301',
-  giro:'Logística',
-  comuna:'Quilicura',
-  telefono:'991448386',
-  ciudad:'Santiago',
-  email:'Guillermo.tell@walmart.com',
-  referencia:'Mantenimientos Preventivos Equipos LTS Quilicura JUNIO 2026',
+  cliente:'',
+  contacto:'',
+  rut:'',
+  direccion:'',
+  giro:'',
+  comuna:'',
+  telefono:'',
+  ciudad:'',
+  email:'',
+  referencia:'',
   garantia:'30 días',
   condiciones:'',
-  observaciones:'El mantenimiento preventivo se realizará de acuerdo al manual del fabricante.\nEl mantenimiento se realizará en instalaciones del cliente.\nEl mantenimiento preventivo no incluye repuestos, tampoco reparaciones.\nEl mantenimiento de los equipos incluye informe técnico.',
-  items:[{codigo:'1.000.00', descripcion:'Transpaletas PE – PC – SP – PR - WP', cantidad:70, um:'UN', precio:105300, dscto:0}],
+  observaciones:'',
+  items:[{codigo:'', descripcion:'', cantidad:1, um:'UN', precio:0, dscto:0}],
   savedAt:null,
   savedInSupabase:false,
   dirty:true
@@ -62,7 +62,9 @@ let saved = JSON.parse(localStorage.getItem('th_saved')||'[]');
 function loadCurrent(){
   let cached = null;
   try { cached = JSON.parse(localStorage.getItem('th_current') || 'null'); } catch(e) { cached = null; }
-  const doc = cached ? {...defaultDoc, ...cached} : {...defaultDoc};
+  const shouldRestoreDraft = cached && !cached.savedAt && !cached.id && !cached.numeroReservado;
+  if (cached && !shouldRestoreDraft) localStorage.removeItem('th_current');
+  const doc = shouldRestoreDraft ? {...defaultDoc, ...cached} : {...defaultDoc};
   if (doc.ciudad === 'Santiago') doc.ciudad = 'Región Metropolitana de Santiago';
   if (!REGIONES_COMUNAS.some(r => r.region === doc.ciudad)) {
     doc.ciudad = '';
