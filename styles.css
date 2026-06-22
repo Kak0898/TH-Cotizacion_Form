@@ -45,6 +45,7 @@ button:disabled{opacity:.55;cursor:not-allowed;transform:none}
 .quote-block{text-align:center;padding:6px 0 0 22px;border-left:1px solid #d7dee9;min-height:130px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start}
 .quote-main{width:100%;display:flex;flex-direction:column;align-items:center}.quote-label{font-size:22px;font-weight:900;color:var(--azul);letter-spacing:.3px;text-transform:uppercase;margin-bottom:0}
 .quote-number{font-size:82px;line-height:.92;font-weight:900;color:#061a4d;letter-spacing:2px;margin:2px 0 12px}
+.quote-number.pre-number{font-size:42px;line-height:1.05;letter-spacing:.5px;word-break:break-word}
 .date-block{line-height:1.55;font-size:13px;width:100%;max-width:350px}
 .date-block-under{margin-top:0;padding:0}
 .date-row{display:grid;grid-template-columns:125px minmax(120px,1fr);gap:10px;align-items:center;margin:0 auto 8px;text-align:left}
