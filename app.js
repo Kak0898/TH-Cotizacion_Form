@@ -71,6 +71,7 @@ function loadCurrent(){
     doc.comuna = '';
   }
   doc.rut = formatRut(doc.rut);
+  doc.telefono = formatPhone(doc.telefono);
   doc.estado = doc.estado || (doc.numeroReservado ? 'cotizacion_emitida' : 'pre_cotizacion');
   doc.tipo = doc.numeroReservado ? 'COTIZACIÓN' : 'PRE-COTIZACIÓN';
   doc.preNumero = doc.preNumero || '';
@@ -113,6 +114,7 @@ function markDirty(){state.dirty=true; state.savedAt=null; state.savedInSupabase
 function setSilent(k,v){state[k]=v; markDirty(); persist()}
 function setItemSilent(i,k,v){state.items[i][k]=v; markDirty(); persist()}
 function setRutSilent(v){state.rut=formatRut(v); markDirty(); persist()}
+function setPhoneSilent(v){state.telefono=formatPhone(v); markDirty(); persist()}
 function setRegionSilent(v){state.ciudad=v; if (!getComunas(v).includes(state.comuna)) state.comuna=''; markDirty(); persist(); render()}
 function addItem(){state.items.push({codigo:'',descripcion:'',cantidad:1,um:'UN',precio:0,dscto:0});markDirty();persist();render()}
 function delItem(i){state.items.splice(i,1);markDirty();persist();render()}
@@ -131,6 +133,9 @@ function formatRut(value){
   const dv = clean.slice(-1);
   const formattedBody = body.replace(/\B(?=(\d{3})+(?!\d))/g,'.');
   return `${formattedBody}-${dv}`;
+}
+function formatPhone(value){
+  return String(value || '').replace(/\D/g,'').slice(0,12);
 }
 
 function localNextNumber(){
@@ -487,7 +492,7 @@ function render(){
         <div class="field"><label>Giro</label><input value="${esc(state.giro)}" oninput="setSilent('giro',this.value)" onchange="render()"></div>
         <div class="field"><label>Región</label><select onchange="setRegionSilent(this.value)">${options(REGIONES_COMUNAS.map(r=>r.region), state.ciudad, 'Selecciona región')}</select></div>
         <div class="field"><label>Comuna</label><select ${state.ciudad ? '' : 'disabled'} onchange="setSilent('comuna',this.value);render()">${options(getComunas(state.ciudad), state.comuna, state.ciudad ? 'Selecciona comuna' : 'Primero selecciona región')}</select></div>
-        <div class="field"><label>Teléfono</label><input value="${esc(state.telefono)}" oninput="setSilent('telefono',this.value)" onchange="render()"></div>
+        <div class="field"><label>Teléfono</label><input inputmode="numeric" autocomplete="off" value="${esc(state.telefono)}" oninput="this.value=formatPhone(this.value);setPhoneSilent(this.value)" onchange="render()" placeholder="991448386"></div>
         <div class="field"><label>E-mail</label><input value="${esc(state.email)}" oninput="setSilent('email',this.value)" onchange="render()"></div>
       </div>
 
