@@ -90,6 +90,7 @@ function addItem(){state.items.push({codigo:'',descripcion:'',cantidad:1,um:'UN'
 function delItem(i){state.items.splice(i,1);markDirty();persist();render()}
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
 function canExport(){return Boolean(state.numeroReservado && state.savedAt && !state.dirty)}
+function errorText(err){return err?.message || err?.details || err?.hint || String(err || 'Error desconocido')}
 
 function localNextNumber(){
   const stored = Number(localStorage.getItem('th_last_cotizacion') || BASE_LAST_COTIZACION);
@@ -318,7 +319,7 @@ async function saveDoc(){
     }
   } catch (err) {
     console.error(err);
-    saveStatus = { type:'bad', text:'No se pudo guardar. Revisa SQL de pre-cotización, URL, anon key y políticas RLS.' };
+    saveStatus = { type:'bad', text:`No se pudo guardar: ${errorText(err)}` };
   } finally {
     savingDoc = false;
     render();
@@ -336,7 +337,7 @@ async function emitDoc(){
     render();
 
     if (supabaseClient && state.id) {
-      const { data, error } = await supabaseClient.rpc('emit_th_cotizacion', { doc_id: state.id });
+      const { data, error } = await supabaseClient.rpc('emit_th_cotizacion', { doc_id: Number(state.id) });
       if (error) throw error;
       state = docFromDb(data);
       saveStatus = { type:'ok', text:'Cotización emitida con número final seguro.' };
@@ -361,7 +362,7 @@ async function emitDoc(){
     }
   } catch (err) {
     console.error(err);
-    saveStatus = { type:'bad', text:'No se pudo emitir. Ejecuta supabase_pre_cotizacion.sql y revisa RLS.' };
+    saveStatus = { type:'bad', text:`No se pudo emitir: ${errorText(err)}` };
   } finally {
     savingDoc = false;
     render();

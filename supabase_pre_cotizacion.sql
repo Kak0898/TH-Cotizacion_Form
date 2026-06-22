@@ -47,7 +47,7 @@ alter table public.th_documentos
   add column if not exists estado text not null default 'cotizacion_emitida',
   add column if not exists pre_numero text,
   add column if not exists emitida_at timestamptz,
-  add column if not exists pre_documento_id uuid;
+  add column if not exists pre_documento_id bigint;
 
 alter table public.th_documentos
   alter column numero drop not null;
@@ -83,7 +83,9 @@ begin
 end;
 $$;
 
-create or replace function public.emit_th_cotizacion(doc_id uuid)
+drop function if exists public.emit_th_cotizacion(uuid);
+
+create or replace function public.emit_th_cotizacion(doc_id bigint)
 returns public.th_documentos
 language plpgsql
 security definer
@@ -140,4 +142,6 @@ end;
 $$;
 
 grant execute on function public.next_th_pre_cotizacion() to anon, authenticated;
-grant execute on function public.emit_th_cotizacion(uuid) to anon, authenticated;
+grant execute on function public.emit_th_cotizacion(bigint) to anon, authenticated;
+
+notify pgrst, 'reload schema';
