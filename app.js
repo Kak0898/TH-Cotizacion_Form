@@ -357,7 +357,7 @@ function render(){
             <div class="field"><label>U.M.</label><input value="${esc(it.um)}" oninput="setItemSilent(${i},'um',this.value)" onchange="render()"></div>
             <div class="field"><label>Precio</label><input type="number" value="${esc(it.precio)}" oninput="setItemSilent(${i},'precio',this.value)" onchange="render()"></div>
             <div class="field"><label>Dscto %</label><input type="number" value="${esc(it.dscto)}" oninput="setItemSilent(${i},'dscto',this.value)" onchange="render()"></div>
-            <div class="field"><label>Subtotal</label><input readonly value="$ ${money(subtotalItem(it))}"></div>
+            <div class="field"><label>Subtotal</label><input readonly value="${money(subtotalItem(it))}"></div>
             <button class="danger" onclick="delItem(${i})">Eliminar</button>
           </div>
         </div>`).join('')}
@@ -415,16 +415,16 @@ function render(){
 
         <table class="items">
           <tr><th>COD.</th><th>DESCRIPCIÓN</th><th>CANT.</th><th>U.M.</th><th>PRECIO UNIT.</th><th>DSCTO.</th><th>SUBTOTAL</th></tr>
-          ${state.items.map(it=>`<tr><td>${esc(it.codigo)}</td><td class="desc-cell">${esc(it.descripcion)}</td><td class="num">${esc(it.cantidad)}</td><td class="center">${esc(it.um)}</td><td class="num">$ ${money(it.precio)}</td><td class="num">${esc(it.dscto||0)}%</td><td class="num">$ ${money(subtotalItem(it))}</td></tr>`).join('')}
+          ${state.items.map(it=>`<tr><td>${esc(it.codigo)}</td><td class="desc-cell">${esc(it.descripcion)}</td><td class="num">${esc(it.cantidad)}</td><td class="center">${esc(it.um)}</td><td class="num">${money(it.precio)}</td><td class="num">${esc(it.dscto||0)}%</td><td class="num">${money(subtotalItem(it))}</td></tr>`).join('')}
         </table>
 
         <div class="obs-totals">
           <div class="obs"><b>OBSERVACIONES:</b>\n${esc(state.observaciones)}\n\n<b>Garantía:</b> ${esc(state.garantia)}${state.condiciones ? `\n<b>Condiciones:</b> ${esc(state.condiciones)}` : ''}</div>
           <table class="totals">
-            <tr><td>SUBTOTAL</td><td class="num">$ ${money(t.neto)}</td></tr>
-            <tr><td>NETO</td><td class="num">$ ${money(t.neto)}</td></tr>
-            <tr><td>I.V.A. (19%)</td><td class="num">$ ${money(t.iva)}</td></tr>
-            <tr class="total-final"><td>TOTAL</td><td class="num">$ ${money(t.total)}</td></tr>
+            <tr><td>SUBTOTAL</td><td class="num">${money(t.neto)}</td></tr>
+            <tr><td>NETO</td><td class="num">${money(t.neto)}</td></tr>
+            <tr><td>I.V.A. (19%)</td><td class="num">${money(t.iva)}</td></tr>
+            <tr class="total-final"><td>TOTAL</td><td class="num">${money(t.total)}</td></tr>
           </table>
         </div>
 
