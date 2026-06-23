@@ -42,20 +42,20 @@ button:disabled{opacity:.55;cursor:not-allowed;transform:none}
 .item-description-input{min-height:110px;line-height:1.35}
 .preview-wrap{display:flex;justify-content:center;align-items:flex-start;overflow:auto;min-width:0}
 .sheet{width:210mm;min-height:297mm;background:white;padding:13mm 12mm;margin:auto;box-shadow:0 8px 28px #0002;font-size:12px}
-.sheet-header{display:grid;grid-template-columns:46% 54%;gap:14px;align-items:start;border-bottom:2px solid #dce4ef;padding-bottom:10px;margin-bottom:14px}
-.brand-block{line-height:1.18;text-align:left}
-.brand-name{font-size:20px;font-weight:900;color:#111;letter-spacing:.2px;margin-bottom:4px;text-transform:uppercase}
-.brand-desc{font-weight:800;text-transform:uppercase}
-.brand-contact{margin-top:4px}.brand-contact b{font-weight:900}
-.brand-logo{display:block;width:100%;max-width:310px;margin:12px 0 0;height:auto;object-fit:contain}
-.quote-block{text-align:center;padding:6px 0 0 22px;border-left:1px solid #d7dee9;min-height:130px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start}
-.quote-main{width:100%;display:flex;flex-direction:column;align-items:center}.quote-label{font-size:22px;font-weight:900;color:var(--azul);letter-spacing:.3px;text-transform:uppercase;margin-bottom:0}
-.quote-number{font-size:82px;line-height:.92;font-weight:900;color:#061a4d;letter-spacing:2px;margin:2px 0 12px}
-.quote-number.pre-number{font-size:42px;line-height:1.05;letter-spacing:.5px;word-break:break-word}
-.date-block{line-height:1.55;font-size:13px;width:100%;max-width:350px}
+.sheet-header{display:grid;grid-template-columns:48% 52%;gap:12px;align-items:start;border-bottom:2px solid #dce4ef;padding-bottom:8px;margin-bottom:12px}
+.brand-block{line-height:1.12;text-align:left;font-size:10.5px}
+.brand-name{font-size:16px;font-weight:900;color:#111;letter-spacing:.2px;margin-bottom:3px;text-transform:uppercase}
+.brand-desc{font-size:10.5px;font-weight:800;text-transform:uppercase}
+.brand-contact{margin-top:3px;font-size:10px}.brand-contact b{font-weight:900}
+.brand-logo{display:block;width:100%;max-width:235px;margin:8px 0 0;height:auto;max-height:82px;object-fit:contain}
+.quote-block{text-align:center;padding:3px 0 0 16px;border-left:1px solid #d7dee9;min-height:108px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start}
+.quote-main{width:100%;display:flex;flex-direction:column;align-items:center}.quote-label{font-size:17px;font-weight:900;color:var(--azul);letter-spacing:.2px;text-transform:uppercase;margin-bottom:0}
+.quote-number{font-size:62px;line-height:.9;font-weight:900;color:#061a4d;letter-spacing:1px;margin:1px 0 8px}
+.quote-number.pre-number{font-size:34px;line-height:1.05;letter-spacing:.3px;word-break:break-word}
+.date-block{line-height:1.35;font-size:11px;width:100%;max-width:305px}
 .date-block-under{margin-top:0;padding:0}
-.date-row{display:grid;grid-template-columns:125px minmax(120px,1fr);gap:10px;align-items:center;margin:0 auto 8px;text-align:left}
-.date-value{border:1px solid var(--borde);border-radius:7px;padding:8px 10px;text-align:center;background:#fbfcff;min-height:38px;display:flex;align-items:center;justify-content:center;word-break:break-word}
+.date-row{display:grid;grid-template-columns:105px minmax(110px,1fr);gap:8px;align-items:center;margin:0 auto 6px;text-align:left}
+.date-value{border:1px solid var(--borde);border-radius:6px;padding:6px 8px;text-align:center;background:#fbfcff;min-height:30px;display:flex;align-items:center;justify-content:center;word-break:break-word}
 .client{width:100%;border-collapse:collapse;margin:12px 0 10px}
 .client th{background:var(--azul);color:white;text-align:left;padding:7px;font-size:13px;letter-spacing:.2px}
 .client td{border:1px solid var(--borde);padding:6px;vertical-align:middle}
@@ -71,9 +71,9 @@ button:disabled{opacity:.55;cursor:not-allowed;transform:none}
 .totals{width:100%;border-collapse:collapse}.totals td{border:1px solid var(--borde);padding:8px}.totals td:first-child{font-weight:800;background:#f6f8fb}.total-final td{font-size:15px;font-weight:900;color:var(--azul);background:#eef4ff!important}
 .bank{margin-top:18px;border-top:2px solid var(--azul);padding-top:10px;font-weight:700;line-height:1.25}.small{font-size:11px;color:#5b6573}.saved-list{margin-top:12px;display:grid;gap:8px}.saved{border:1px solid var(--borde);border-radius:10px;padding:10px;background:#fbfcfe}.saved b{display:block;color:var(--azul)}
 @media(max-width:1500px){.app{grid-template-columns:minmax(560px,620px) minmax(780px,1fr);gap:18px}.panel{padding:18px}.sheet{transform-origin:top center;transform:scale(.96);margin-bottom:-36px}}
-@media(max-width:1200px){.app{grid-template-columns:1fr}.panel{max-height:none;overflow:visible}.sheet{width:100%;min-height:auto;transform:none;margin-bottom:0}.sheet-header{grid-template-columns:1fr}.quote-block{border:1px solid #d7dee9;border-radius:12px;padding:12px}.date-block-under{padding:0}.brand-logo{max-width:360px}}
-@media(max-width:700px){.app{padding:10px}.grid,.item-row .grid{grid-template-columns:1fr}.panel{padding:14px}.quote-number{font-size:58px}.obs-totals{grid-template-columns:1fr}}
+@media(max-width:1200px){.app{grid-template-columns:1fr}.panel{max-height:none;overflow:visible}.sheet{width:100%;min-height:auto;transform:none;margin-bottom:0}.sheet-header{grid-template-columns:1fr}.quote-block{border:1px solid #d7dee9;border-radius:12px;padding:10px}.date-block-under{padding:0}.brand-logo{max-width:260px;max-height:90px}}
+@media(max-width:700px){.app{padding:10px}.grid,.item-row .grid{grid-template-columns:1fr}.panel{padding:14px}.quote-number{font-size:50px}.quote-number.pre-number{font-size:32px}.obs-totals{grid-template-columns:1fr}}
 @media print{
   @page{size:A4;margin:0}
-  body{background:white}.app{display:block;padding:0}.panel{display:none}.sheet{box-shadow:none;margin:0;width:210mm;min-height:297mm;padding:12mm 12mm;transform:none}.preview-wrap{display:block}.sheet-header{page-break-inside:avoid}.quote-number{font-size:66px}
+  body{background:white}.app{display:block;padding:0}.panel{display:none}.sheet{box-shadow:none;margin:0;width:210mm;min-height:297mm;padding:12mm 12mm;transform:none}.preview-wrap{display:block}.sheet-header{page-break-inside:avoid}.quote-number{font-size:58px}.quote-number.pre-number{font-size:32px}.brand-logo{max-width:220px;max-height:78px}
 }
