@@ -187,6 +187,152 @@ function formatPhone(value){
   return String(value || '').replace(/\D/g,'').slice(0,12);
 }
 
+function formatDateDisplay(value){
+  if (!value) return '-';
+  const [y,m,d] = String(value).split('-').map(Number);
+  if (!y || !m || !d) return esc(value);
+  const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sept','oct','nov','dic'];
+  return `${String(d).padStart(2,'0')}-${meses[m-1]}-${y}`;
+}
+
+function renderCotizacionSheet(t, docLabel, displayNumber){
+  return `
+    <article class="sheet">
+      <header class="sheet-header">
+        <div class="brand-block">
+          <div class="brand-name">TÉCNICA HIDRÁULICA LIMITADA</div>
+          <div class="brand-desc">COMERCIALIZADORA E IMPORTADORA DE REPUESTOS INDUST.</div>
+          <div>CILINDROS HIDRÁULICOS Y NEUMÁTICOS · PARAGUAY 4415, ESTACIÓN CENTRAL, SANTIAGO</div>
+          <div class="brand-contact"><b>Teléfono:</b> 979671127 · <b>E-mail:</b> ventas@tecnicahidraulica.cl</div>
+          <img class="brand-logo" src="${LOGO_SRC}" alt="Logo Técnica Hidráulica Ltda">
+        </div>
+
+        <div class="quote-block">
+          <div class="quote-main">
+            <div class="quote-label">${esc(docLabel)} N°</div>
+            <div class="quote-number ${state.numeroReservado ? '' : 'pre-number'}">${esc(displayNumber)}</div>
+          </div>
+          <div class="date-block date-block-under">
+            <div class="date-row"><b>Fecha Emisión:</b><div class="date-value">${esc(state.fecha)}</div></div>
+            <div class="date-row"><b>Fecha Vcto:</b><div class="date-value">${esc(state.vcto||'-')}</div></div>
+            <div class="date-row"><b>R.U.T.:</b><div class="date-value">${esc(state.rutEmpresa)}</div></div>
+          </div>
+        </div>
+      </header>
+
+      <table class="client">
+        <tr><th colspan="4">DATOS CLIENTE</th></tr>
+        <tr><td class="label">Señor(es)</td><td>${esc(state.cliente)}</td><td class="label">Contacto</td><td>${esc(state.contacto)}</td></tr>
+        <tr><td class="label">Rut</td><td>${esc(state.rut)}</td><td class="label">Dirección</td><td>${esc(state.direccion)}</td></tr>
+        <tr><td class="label">Giro</td><td>${esc(state.giro)}</td><td class="label">Comuna</td><td>${esc(state.comuna)}</td></tr>
+        <tr><td class="label">Teléfono</td><td>${esc(state.telefono)}</td><td class="label">Región</td><td>${esc(state.ciudad)}</td></tr>
+        <tr><td class="label">E-mail</td><td>${esc(state.email)}</td><td class="label">Fecha</td><td>${esc(state.fecha)}</td></tr>
+      </table>
+
+      ${(state.referencias || []).map((ref,r)=>`
+        <div class="ref">${r+1}. ${esc(ref.texto || `Referencia ${r+1}`)}</div>
+        <table class="items">
+          <tr><th>COD.</th><th>DESCRIPCIÓN</th><th>CANT.</th><th>U.M.</th><th>PRECIO UNIT.</th><th>DSCTO.</th><th>SUBTOTAL</th></tr>
+          ${(ref.items || []).map(it=>`<tr><td>${esc(it.codigo)}</td><td class="desc-cell">${esc(it.descripcion)}</td><td class="num">${esc(it.cantidad)}</td><td class="center">${esc(it.um)}</td><td class="num">${money(it.precio)}</td><td class="num">${esc(it.dscto||0)}%</td><td class="num">${money(subtotalItem(it))}</td></tr>`).join('')}
+        </table>
+      `).join('')}
+
+      <div class="obs-totals">
+        <div class="obs"><b>OBSERVACIONES:</b>\n${esc(state.observaciones)}\n\n<b>Garantía:</b> ${esc(state.garantia)}${state.condiciones ? `\n<b>Condiciones:</b> ${esc(state.condiciones)}` : ''}</div>
+        <table class="totals">
+          <tr><td>SUBTOTAL</td><td class="num">${money(t.neto)}</td></tr>
+          <tr><td>NETO</td><td class="num">${money(t.neto)}</td></tr>
+          <tr><td>I.V.A. (19%)</td><td class="num">${money(t.iva)}</td></tr>
+          <tr class="total-final"><td>TOTAL</td><td class="num">${money(t.total)}</td></tr>
+        </table>
+      </div>
+
+      <div class="bank">Datos para Orden de Compra<br>Razón Social: TÉCNICA HIDRÁULICA LTDA. RUT: 76.171.450-3<br>E-mail: ventas@tecnicahidraulica.cl</div>
+    </article>`;
+}
+
+function renderPreOrdenSheet(t, displayNumber){
+  return `
+    <article class="sheet preorder-sheet">
+      <header class="preorder-header">
+        <section class="preorder-brand">
+          <div class="brand-name">TÉCNICA HIDRÁULICA LIMITADA</div>
+          <div class="brand-desc">COMERCIALIZADORA E IMPORTADORA DE REPUESTOS INDUSTRIALES</div>
+          <div>PARAGUAY 4415, ESTACIÓN CENTRAL, SANTIAGO</div>
+          <div class="brand-contact"><b>Teléfono:</b> 979671127 · <b>E-mail:</b> ventas@tecnicahidraulica.cl</div>
+          <img class="brand-logo" src="${LOGO_SRC}" alt="Logo Técnica Hidráulica Ltda">
+        </section>
+        <section class="preorder-doc">
+          <div class="preorder-type">PRE-ORDEN / PRESUPUESTO TÉCNICO</div>
+          <div class="preorder-number">${esc(displayNumber)}</div>
+          <div class="preorder-mini-grid">
+            <b>Fecha emisión</b><span>${formatDateDisplay(state.fecha)}</span>
+            <b>Validez</b><span>${esc(state.garantia || '15 días')}</span>
+            <b>R.U.T.</b><span>${esc(state.rutEmpresa)}</span>
+          </div>
+        </section>
+      </header>
+
+      <div class="preorder-title">Datos del cliente</div>
+      <section class="preorder-info-grid">
+        <table class="preorder-table">
+          <tr><td class="label">Señores</td><td>${esc(state.cliente)}</td></tr>
+          <tr><td class="label">Atención</td><td>${esc(state.contacto)}</td></tr>
+          <tr><td class="label">E-mail</td><td>${esc(state.email)}</td></tr>
+        </table>
+        <table class="preorder-table">
+          <tr><td class="label">Fono</td><td>${esc(state.telefono)}</td></tr>
+          <tr><td class="label">Región</td><td>${esc(state.ciudad)}</td></tr>
+          <tr><td class="label">Comuna</td><td>${esc(state.comuna)}</td></tr>
+        </table>
+      </section>
+
+      ${(state.referencias || []).map((ref,r)=>`
+        <div class="preorder-title">Referencia ${r+1}${ref.texto ? ` - ${esc(ref.texto)}` : ''}</div>
+        <table class="preorder-items">
+          <tr>
+            <th style="width:38px">Cant.</th>
+            <th>Detalle</th>
+            <th style="width:98px">Valor unitario</th>
+            <th style="width:98px">Valor total</th>
+          </tr>
+          ${(ref.items || []).map(it=>`
+            <tr>
+              <td class="center">${esc(it.cantidad)}</td>
+              <td class="desc-cell"><b>${esc(it.codigo)}</b>${it.codigo ? '<br>' : ''}${esc(it.descripcion)}</td>
+              <td class="num">${money(it.precio)}</td>
+              <td class="num">${money(subtotalItem(it))}</td>
+            </tr>`).join('')}
+        </table>
+      `).join('')}
+
+      <section class="preorder-notes">
+        <b>Notas y condiciones técnicas</b><br>
+        ${esc(state.observaciones || 'Documento sujeto a revisión y aprobación del cliente.')}<br>
+        ${state.condiciones ? `<br>${esc(state.condiciones)}` : ''}
+      </section>
+
+      <section class="preorder-bottom">
+        <table class="preorder-table preorder-conditions">
+          <tr><td>Plazo de entrega</td><td>${esc(state.vcto ? 'Según fecha de vencimiento indicada' : 'A coordinar')}</td></tr>
+          <tr><td>Forma de pago</td><td>${esc(state.condiciones || '30 días')}</td></tr>
+          <tr><td>Observación</td><td>Documento sujeto a aprobación del cliente</td></tr>
+        </table>
+        <table class="totals preorder-totals">
+          <tr><td>Neto</td><td class="num">${money(t.neto)}</td></tr>
+          <tr><td>IVA 19%</td><td class="num">${money(t.iva)}</td></tr>
+          <tr class="total-final"><td>Total</td><td class="num">${money(t.total)}</td></tr>
+        </table>
+      </section>
+
+      <section class="preorder-sign">
+        <b>Rafael Espinoza Toledo</b>
+        <span>Vendedor Técnico</span><br>
+        <span class="small">ventas@tecnicahidraulica.cl</span>
+      </section>
+    </article>`;
+}
+
 function localNextNumber(){
   const stored = Number(localStorage.getItem('th_last_cotizacion') || BASE_LAST_COTIZACION);
   const current = Number(state.numero) || BASE_LAST_COTIZACION;
@@ -591,58 +737,7 @@ function render(){
     </aside>
 
     <section class="preview-wrap">
-      <article class="sheet">
-        <header class="sheet-header">
-          <div class="brand-block">
-            <div class="brand-name">TÉCNICA HIDRÁULICA LIMITADA</div>
-            <div class="brand-desc">COMERCIALIZADORA E IMPORTADORA DE REPUESTOS INDUST.</div>
-            <div>CILINDROS HIDRÁULICOS Y NEUMÁTICOS · PARAGUAY 4415, ESTACIÓN CENTRAL, SANTIAGO</div>
-            <div class="brand-contact"><b>Teléfono:</b> 979671127 · <b>E-mail:</b> ventas@tecnicahidraulica.cl</div>
-            <img class="brand-logo" src="${LOGO_SRC}" alt="Logo Técnica Hidráulica Ltda">
-          </div>
-
-          <div class="quote-block">
-            <div class="quote-main">
-              <div class="quote-label">${esc(docLabel)} N°</div>
-              <div class="quote-number ${state.numeroReservado ? '' : 'pre-number'}">${esc(displayNumber)}</div>
-            </div>
-            <div class="date-block date-block-under">
-              <div class="date-row"><b>Fecha Emisión:</b><div class="date-value">${esc(state.fecha)}</div></div>
-              <div class="date-row"><b>Fecha Vcto:</b><div class="date-value">${esc(state.vcto||'-')}</div></div>
-              <div class="date-row"><b>R.U.T.:</b><div class="date-value">${esc(state.rutEmpresa)}</div></div>
-            </div>
-          </div>
-        </header>
-
-        <table class="client">
-          <tr><th colspan="4">DATOS CLIENTE</th></tr>
-          <tr><td class="label">Señor(es)</td><td>${esc(state.cliente)}</td><td class="label">Contacto</td><td>${esc(state.contacto)}</td></tr>
-          <tr><td class="label">Rut</td><td>${esc(state.rut)}</td><td class="label">Dirección</td><td>${esc(state.direccion)}</td></tr>
-          <tr><td class="label">Giro</td><td>${esc(state.giro)}</td><td class="label">Comuna</td><td>${esc(state.comuna)}</td></tr>
-          <tr><td class="label">Teléfono</td><td>${esc(state.telefono)}</td><td class="label">Región</td><td>${esc(state.ciudad)}</td></tr>
-          <tr><td class="label">E-mail</td><td>${esc(state.email)}</td><td class="label">Fecha</td><td>${esc(state.fecha)}</td></tr>
-        </table>
-
-        ${(state.referencias || []).map((ref,r)=>`
-          <div class="ref">${r+1}. ${esc(ref.texto || `Referencia ${r+1}`)}</div>
-          <table class="items">
-            <tr><th>COD.</th><th>DESCRIPCIÓN</th><th>CANT.</th><th>U.M.</th><th>PRECIO UNIT.</th><th>DSCTO.</th><th>SUBTOTAL</th></tr>
-            ${(ref.items || []).map(it=>`<tr><td>${esc(it.codigo)}</td><td class="desc-cell">${esc(it.descripcion)}</td><td class="num">${esc(it.cantidad)}</td><td class="center">${esc(it.um)}</td><td class="num">${money(it.precio)}</td><td class="num">${esc(it.dscto||0)}%</td><td class="num">${money(subtotalItem(it))}</td></tr>`).join('')}
-          </table>
-        `).join('')}
-
-        <div class="obs-totals">
-          <div class="obs"><b>OBSERVACIONES:</b>\n${esc(state.observaciones)}\n\n<b>Garantía:</b> ${esc(state.garantia)}${state.condiciones ? `\n<b>Condiciones:</b> ${esc(state.condiciones)}` : ''}</div>
-          <table class="totals">
-            <tr><td>SUBTOTAL</td><td class="num">${money(t.neto)}</td></tr>
-            <tr><td>NETO</td><td class="num">${money(t.neto)}</td></tr>
-            <tr><td>I.V.A. (19%)</td><td class="num">${money(t.iva)}</td></tr>
-            <tr class="total-final"><td>TOTAL</td><td class="num">${money(t.total)}</td></tr>
-          </table>
-        </div>
-
-        <div class="bank">Datos para Orden de Compra<br>Razón Social: TÉCNICA HIDRÁULICA LTDA. RUT: 76.171.450-3<br>E-mail: ventas@tecnicahidraulica.cl</div>
-      </article>
+      ${state.numeroReservado ? renderCotizacionSheet(t, docLabel, displayNumber) : renderPreOrdenSheet(t, displayNumber)}
     </section>
   </main>`;
 }

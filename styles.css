@@ -70,10 +70,34 @@ button:disabled{opacity:.55;cursor:not-allowed;transform:none}
 .obs{border:1px solid var(--borde);padding:10px;white-space:pre-line;min-height:125px;line-height:1.25}
 .totals{width:100%;border-collapse:collapse}.totals td{border:1px solid var(--borde);padding:8px}.totals td:first-child{font-weight:800;background:#f6f8fb}.total-final td{font-size:15px;font-weight:900;color:var(--azul);background:#eef4ff!important}
 .bank{margin-top:18px;border-top:2px solid var(--azul);padding-top:10px;font-weight:700;line-height:1.25}.small{font-size:11px;color:#5b6573}.saved-list{margin-top:12px;display:grid;gap:8px}.saved{border:1px solid var(--borde);border-radius:10px;padding:10px;background:#fbfcfe}.saved b{display:block;color:var(--azul)}
+.preorder-sheet{padding:11mm 12mm;font-size:10.7px}
+.preorder-header{display:grid;grid-template-columns:45% 55%;gap:12px;align-items:start;border-bottom:3px solid var(--azul);padding-bottom:8px;margin-bottom:12px}
+.preorder-brand{line-height:1.18;text-align:left;font-size:10.5px}
+.preorder-doc{text-align:right}
+.preorder-type{font-size:18px;font-weight:900;color:var(--azul);text-transform:uppercase;margin-bottom:3px}
+.preorder-number{font-size:36px;line-height:1;font-weight:900;color:#061a4d;margin-bottom:7px;word-break:break-word}
+.preorder-mini-grid{display:grid;grid-template-columns:120px 1fr;gap:5px;font-size:11px;align-items:center;margin-left:auto;max-width:330px;text-align:left}
+.preorder-mini-grid b{font-weight:900}
+.preorder-mini-grid span{border:1px solid var(--borde);background:#fbfcff;border-radius:5px;padding:5px 7px;text-align:center}
+.preorder-title{margin:12px 0 6px;background:var(--azul);color:white;font-size:12px;font-weight:900;padding:6px 8px;text-transform:uppercase;letter-spacing:.2px}
+.preorder-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.preorder-table,.preorder-items{width:100%;border-collapse:collapse}
+.preorder-table td,.preorder-items th,.preorder-items td{border:1px solid var(--borde);padding:5px 6px;vertical-align:top;font-size:10.7px}
+.preorder-table .label{background:#f9fbfd;font-weight:900;width:95px}
+.preorder-items{margin-top:6px}
+.preorder-items th{background:var(--azul);color:white;text-align:center;font-weight:900;font-size:10px}
+.preorder-notes{border:1px solid var(--borde);padding:8px;margin-top:8px;font-size:10.5px;line-height:1.35;background:#fff;white-space:pre-line}
+.preorder-notes b{color:var(--azul)}
+.preorder-bottom{display:grid;grid-template-columns:1fr 220px;gap:12px;margin-top:10px;align-items:start}
+.preorder-conditions td:first-child{font-weight:900;background:#fbfcff;width:135px}
+.preorder-totals td:first-child{font-weight:900;background:#f6f8fb}
+.preorder-sign{margin-top:12px;text-align:center;border-top:1px solid var(--borde);padding-top:8px;font-size:10.5px}
+.preorder-sign b{display:block;font-size:13px}
 @media(max-width:1500px){.app{grid-template-columns:minmax(560px,620px) minmax(780px,1fr);gap:18px}.panel{padding:18px}.sheet{transform-origin:top center;transform:scale(.96);margin-bottom:-36px}}
 @media(max-width:1200px){.app{grid-template-columns:1fr}.panel{max-height:none;overflow:visible}.sheet{width:210mm;min-height:auto;transform:none;margin-bottom:0}.sheet-header{grid-template-columns:48% 52%}.quote-block{border-left:1px solid #d7dee9;border-radius:0;padding:3px 0 0 16px}.date-block-under{padding:0}.brand-logo{max-width:235px;max-height:82px}}
-@media(max-width:700px){.app{padding:10px}.grid,.item-row .grid{grid-template-columns:1fr}.panel{padding:14px}.sheet{width:100%;overflow:hidden}.sheet-header{grid-template-columns:1fr}.quote-block{border:1px solid #d7dee9;border-radius:12px;padding:10px}.quote-number{font-size:46px}.quote-number.pre-number{font-size:30px}.brand-logo{max-width:220px;max-height:78px}.obs-totals{grid-template-columns:1fr}}
+@media(max-width:700px){.app{padding:10px}.grid,.item-row .grid{grid-template-columns:1fr}.panel{padding:14px}.sheet{width:100%;overflow:hidden}.sheet-header,.preorder-header,.preorder-info-grid,.preorder-bottom{grid-template-columns:1fr}.preorder-doc{text-align:left}.preorder-mini-grid{margin-left:0}.quote-block{border:1px solid #d7dee9;border-radius:12px;padding:10px}.quote-number{font-size:46px}.quote-number.pre-number{font-size:30px}.preorder-number{font-size:30px}.brand-logo{max-width:220px;max-height:78px}.obs-totals{grid-template-columns:1fr}}
 @media print{
   @page{size:A4;margin:0}
   body{background:white}.app{display:block;padding:0}.panel{display:none}.sheet{box-shadow:none;margin:0;width:210mm;min-height:297mm;padding:12mm 12mm;transform:none}.preview-wrap{display:block}.sheet-header{page-break-inside:avoid}.quote-number{font-size:58px}.quote-number.pre-number{font-size:32px}.brand-logo{max-width:220px;max-height:78px}
+  .preorder-sheet{padding:11mm 12mm;font-size:10.5px}.preorder-header{page-break-inside:avoid}
 }
