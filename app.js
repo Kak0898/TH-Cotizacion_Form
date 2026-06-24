@@ -288,113 +288,118 @@ function renderCotizacionSheet(t, docLabel, displayNumber){
 
 function renderPreOrdenSheet(t, displayNumber, doc=state){
   const po = doc.preOrden || {};
-  const hasSpecs = (list)=>Array.isArray(list) && list.some(it=>it.nombre || it.valor);
-  const specsRows = (list)=>list.map(it=>`<tr><td>${esc(it.nombre)}</td><td>${esc(it.valor)}</td></tr>`).join('');
-  const cargos = po.cargos || [];
+  const specs = [
+    ...(Array.isArray(po.caracteristicas) ? po.caracteristicas : []),
+    ...(Array.isArray(po.datosOperativos) ? po.datosOperativos : [])
+  ].filter(it=>it.nombre || it.valor);
+  const cargos = (po.cargos || []).filter(it=>it.detalle || Number(it.precio));
+  const notas = String(doc.observaciones || 'Documento sujeto a revisión y aprobación del cliente.')
+    .split('\n')
+    .map(s=>s.trim())
+    .filter(Boolean);
+  const mainRef = (doc.referencias || [])[0] || {texto:'', items:[]};
+  const mainItems = mainRef.items || [];
+  const serviceText = po.servicio || mainRef.texto || 'Detalle del servicio presupuestado.';
+  const mainItemRows = mainItems.length ? mainItems : [{cantidad:1, descripcion:'', precio:0}];
   return `
-    <article class="sheet preorder-sheet">
-      <header class="preorder-header">
-        <section class="preorder-brand">
+    <article class="sheet preorder-sheet budget-sheet">
+      <header class="sheet-header budget-header">
+        <section class="brand-block">
           <div class="brand-name">TÉCNICA HIDRÁULICA LIMITADA</div>
-          <div class="brand-desc">COMERCIALIZADORA E IMPORTADORA DE REPUESTOS INDUSTRIALES</div>
-          <div>PARAGUAY 4415, ESTACIÓN CENTRAL, SANTIAGO</div>
+          <div class="brand-desc">COMERCIALIZADORA E IMPORTADORA DE REPUESTOS INDUST.</div>
+          <div>CILINDROS HIDRÁULICOS Y NEUMÁTICOS · PARAGUAY 4415, ESTACIÓN CENTRAL, SANTIAGO</div>
           <div class="brand-contact"><b>Teléfono:</b> 979671127 · <b>E-mail:</b> ventas@tecnicahidraulica.cl</div>
           <img class="brand-logo" src="${LOGO_SRC}" alt="Logo Técnica Hidráulica Ltda">
         </section>
-        <section class="preorder-doc">
-          <div class="preorder-type">PRE-ORDEN / PRESUPUESTO TÉCNICO</div>
-          <div class="preorder-number">${esc(displayNumber)}</div>
-          <div class="preorder-mini-grid">
-            <b>Fecha emisión</b><span>${formatDateDisplay(doc.fecha)}</span>
-            <b>Validez</b><span>${esc(doc.garantia || '15 días')}</span>
-            <b>R.U.T.</b><span>${esc(doc.rutEmpresa)}</span>
+        <section class="quote-block">
+          <div class="quote-main">
+            <div class="quote-label">PRE-COTIZACIÓN N°</div>
+            <div class="quote-number pre-number">${esc(displayNumber)}</div>
+          </div>
+          <div class="date-block date-block-under">
+            <div class="date-row"><b>Fecha Emisión:</b><div class="date-value">${formatDateDisplay(doc.fecha)}</div></div>
+            <div class="date-row"><b>Fecha Vcto:</b><div class="date-value">${doc.vcto ? formatDateDisplay(doc.vcto) : '-'}</div></div>
+            <div class="date-row"><b>R.U.T.:</b><div class="date-value">${esc(doc.rutEmpresa)}</div></div>
           </div>
         </section>
       </header>
 
-      <div class="preorder-title">Datos del cliente</div>
-      <section class="preorder-info-grid">
-        <table class="preorder-table">
-          <tr><td class="label">Señores</td><td>${esc(doc.cliente)}</td></tr>
-          <tr><td class="label">Atención</td><td>${esc(doc.contacto)}</td></tr>
+      <section class="budget-top-info">
+        <table class="budget-info-table">
+          <tr><th colspan="2">DATOS CLIENTE</th></tr>
+          <tr><td class="label">Señor(es)</td><td>${esc(doc.cliente)}</td></tr>
+          <tr><td class="label">Contacto</td><td>${esc(doc.contacto)}</td></tr>
           <tr><td class="label">E-mail</td><td>${esc(doc.email)}</td></tr>
-        </table>
-        <table class="preorder-table">
           <tr><td class="label">Fono</td><td>${esc(doc.telefono)}</td></tr>
-          <tr><td class="label">Región</td><td>${esc(doc.ciudad)}</td></tr>
-          <tr><td class="label">Comuna</td><td>${esc(doc.comuna)}</td></tr>
+          <tr><td class="label">Fecha</td><td>${formatDateDisplay(doc.fecha)}</td></tr>
+        </table>
+        <table class="budget-info-table budget-order-table">
+          <tr><th colspan="2">DATOS ORDEN DE COMPRA</th></tr>
+          <tr><td class="label">Presupuesto N°</td><td>${esc(displayNumber)}</td></tr>
+          <tr><td class="label">Razón social</td><td>Técnica Hidráulica Limitada</td></tr>
+          <tr><td class="label">R.U.T.</td><td>${esc(doc.rutEmpresa)}</td></tr>
+          <tr><td class="label">Fono</td><td>227767354 - 227645666</td></tr>
         </table>
       </section>
 
-      ${(doc.referencias || []).map((ref,r)=>`
-        <div class="preorder-title">Referencia ${r+1}${ref.texto ? ` - ${esc(ref.texto)}` : ''}</div>
-        ${r === 0 && po.servicio ? `<div class="preorder-service">${esc(po.servicio)}</div>` : ''}
-        <table class="preorder-items">
-          <tr>
-            <th style="width:38px">Cant.</th>
-            <th>Detalle</th>
-            <th style="width:98px">Valor unitario</th>
-            <th style="width:98px">Valor total</th>
-          </tr>
-          ${(ref.items || []).map(it=>`
-            <tr>
-              <td class="center">${esc(it.cantidad)}</td>
-              <td class="desc-cell">${esc(it.descripcion)}</td>
-              <td class="num">${money(it.precio)}</td>
-              <td class="num">${money(subtotalItem(it))}</td>
-            </tr>`).join('')}
-        </table>
-      `).join('')}
-
-      <section class="preorder-two-cols">
-        <table class="preorder-table preorder-spec-table">
-          <tr><th colspan="2">Características técnicas</th></tr>
-          ${hasSpecs(po.caracteristicas) ? specsRows(po.caracteristicas) : '<tr><td>&nbsp;</td><td>&nbsp;</td></tr>'}
-        </table>
-        <table class="preorder-table preorder-spec-table">
-          <tr><th colspan="2">Datos operativos</th></tr>
-          ${hasSpecs(po.datosOperativos) ? specsRows(po.datosOperativos) : '<tr><td>&nbsp;</td><td>&nbsp;</td></tr>'}
-        </table>
-      </section>
-
-      <div class="preorder-title">Cargos adicionales de reparación</div>
-      <table class="preorder-items preorder-charges">
+      <table class="budget-main-table">
         <tr>
+          <th style="width:38px">Cant.</th>
           <th>Detalle</th>
-          <th style="width:98px">Valor unitario</th>
-          <th style="width:98px">Valor total</th>
+          <th style="width:92px">Valor Unitario</th>
+          <th style="width:92px">Valor Total</th>
         </tr>
-        ${cargos.map(it=>`
+        ${mainItemRows.map((it,i)=>`
           <tr>
-            <td class="desc-cell">${esc(it.detalle)}</td>
+            <td class="center budget-qty">${esc(it.cantidad || 1)}</td>
+            <td class="budget-detail">
+              ${i === 0 ? `<div class="budget-service">${esc(serviceText)}</div>` : ''}
+              ${it.descripcion ? `<div class="desc-cell">${esc(it.descripcion)}</div>` : ''}
+              ${i === 0 && specs.length ? `<div class="budget-specs">${specs.map(sp=>`
+                <span>${esc(sp.nombre)}</span><span>:</span><span>${esc(sp.valor)}</span>
+              `).join('')}</div>` : ''}
+            </td>
             <td class="num">${money(it.precio)}</td>
-            <td class="num">${money(subtotalCargo(it))}</td>
+            <td class="num">${money(subtotalItem(it))}</td>
           </tr>`).join('')}
       </table>
 
-      <section class="preorder-notes">
-        <b>Notas y condiciones técnicas</b><br>
-        ${esc(doc.observaciones || 'Documento sujeto a revisión y aprobación del cliente.')}<br>
-        ${doc.condiciones ? `<br>${esc(doc.condiciones)}` : ''}
+      <div class="budget-block-title">CARGOS ADICIONALES</div>
+      <section class="budget-extra">
+        <table>
+          <tr><th>Detalle</th><th style="width:92px">Valor Unitario</th><th style="width:92px">Valor Total</th></tr>
+          ${cargos.length ? cargos.map(it=>`
+            <tr><td>${esc(it.detalle)}</td><td class="num">${money(it.precio)}</td><td class="num">${money(subtotalCargo(it))}</td></tr>
+          `).join('') : '<tr><td>&nbsp;</td><td class="num">$0</td><td class="num">$0</td></tr>'}
+        </table>
       </section>
 
-      <section class="preorder-bottom">
-        <table class="preorder-table preorder-conditions">
-          <tr><td>Plazo de entrega</td><td>${esc(doc.vcto ? 'Según fecha de vencimiento indicada' : 'A coordinar')}</td></tr>
+      <div class="budget-block-title">NOTAS Y CONDICIONES</div>
+      <section class="budget-notes">
+        <div class="budget-notes-list">
+          ${notas.map((nota,i)=>`<span>${i+1}.-</span><span>${esc(nota)}</span>`).join('')}
+        </div>
+      </section>
+
+      <section class="budget-bottom">
+        <table class="budget-terms">
+          <tr><td>Validez de la cotización</td><td>${esc(doc.garantia || '15 días')}</td></tr>
+          <tr><td>Plazo de entrega</td><td>${esc(doc.vcto ? 'Según fecha indicada' : 'A coordinar')}</td></tr>
           <tr><td>Forma de pago</td><td>${esc(doc.condiciones || '30 días')}</td></tr>
-          <tr><td>Observación</td><td>Documento sujeto a aprobación del cliente</td></tr>
         </table>
-        <table class="totals preorder-totals">
+        <table class="budget-totals">
           <tr><td>Neto</td><td class="num">${money(t.neto)}</td></tr>
-          <tr><td>IVA 19%</td><td class="num">${money(t.iva)}</td></tr>
-          <tr class="total-final"><td>Total</td><td class="num">${money(t.total)}</td></tr>
+          <tr><td>0,19</td><td class="num">${money(t.iva)}</td></tr>
+          <tr><td>Total</td><td class="num">${money(t.total)}</td></tr>
         </table>
       </section>
 
-      <section class="preorder-sign">
+      <section class="budget-sign">
         <b>Rafael Espinoza Toledo</b>
         <span>Vendedor Técnico</span><br>
-        <span class="small">ventas@tecnicahidraulica.cl</span>
+        <span>ventas@tecnicahidraulica.cl</span><br>
+        <span>Fono: 227767354 - 227645666</span><br>
+        <span>Cel.: 979671127</span>
       </section>
     </article>`;
 }

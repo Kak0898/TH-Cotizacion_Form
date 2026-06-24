@@ -102,11 +102,48 @@ button:disabled{opacity:.55;cursor:not-allowed;transform:none}
 .preorder-totals td:first-child{font-weight:900;background:#f6f8fb}
 .preorder-sign{margin-top:12px;text-align:center;border-top:1px solid var(--borde);padding-top:8px;font-size:10.5px}
 .preorder-sign b{display:block;font-size:13px}
+.budget-sheet{padding:9mm 12mm 8mm;font-size:11px;color:#101010}
+.budget-header{grid-template-columns:49% 51%;gap:12px;border-bottom:2px solid #dce4ef;margin-bottom:8px}
+.budget-header .quote-block{padding:4px 0 0 17px}
+.budget-header .quote-number.pre-number{font-size:42px;line-height:1;letter-spacing:.5px;margin:0 0 8px;color:#061a4d}
+.budget-top-info{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0 8px;align-items:start}
+.budget-info-table{width:100%;border-collapse:collapse}
+.budget-info-table th{background:var(--azul);color:white;text-align:left;font-size:13px;font-style:normal;text-transform:uppercase;padding:7px 8px;border:1px solid var(--azul)}
+.budget-info-table td{border:1px solid #cfd7e3;padding:6px 7px;font-size:11px;vertical-align:middle}
+.budget-info-table .label{font-weight:900;background:#f8fafc;width:108px}
+.budget-order-table .label{width:105px}
+.budget-main-table{width:100%;border-collapse:collapse;border:1.5px solid #000}
+.budget-main-table th,.budget-main-table td{border:1px solid #000;padding:3px 5px;vertical-align:top}
+.budget-main-table th{font-size:9px;font-style:italic;text-align:center;font-weight:900;background:#f3f5f8}
+.budget-main-table td{font-size:11px}
+.budget-qty{font-weight:900}
+.budget-detail{width:auto}
+.budget-service{font-weight:900;font-style:italic;text-decoration:underline;line-height:1.25;margin-bottom:8px;color:#061a4d}
+.budget-specs{display:grid;grid-template-columns:215px 8px 1fr;line-height:1.28;margin-top:2px}
+.budget-specs span:nth-child(6n+1),.budget-specs span:nth-child(6n+2),.budget-specs span:nth-child(6n+3){background:#fafafa}
+.budget-block-title{background:var(--azul);color:#fff;font-weight:900;font-size:10px;text-transform:uppercase;padding:4px 6px;border-left:1.5px solid #000;border-right:1.5px solid #000}
+.budget-extra{border-left:1.5px solid #000;border-right:1.5px solid #000}
+.budget-extra table{width:100%;border-collapse:collapse}
+.budget-extra th,.budget-extra td{border:1px solid #000;padding:3px 5px;font-size:11px}
+.budget-extra th{font-style:italic;text-align:center;font-size:9px;background:#f3f5f8}
+.budget-notes{border-left:1.5px solid #000;border-right:1.5px solid #000;font-weight:900;font-style:italic;line-height:1.18;padding:5px 7px 6px;background:#fff}
+.budget-notes-list{display:grid;grid-template-columns:24px 1fr;column-gap:2px}
+.budget-notes-list span:nth-child(odd){white-space:nowrap}
+.budget-bottom{display:grid;grid-template-columns:1fr 139px;margin-top:0}
+.budget-terms{border-left:1.5px solid #000;border-bottom:1.5px solid #000;background:#fff;border-collapse:collapse}
+.budget-terms td{border:1px solid #000;padding:3px 5px;font-size:11px;font-style:italic}
+.budget-terms td:first-child{width:145px}
+.budget-totals{border-right:1.5px solid #000;border-bottom:1.5px solid #000;background:#fff;border-collapse:collapse}
+.budget-totals td{border:1px solid #000;padding:3px 5px;font-size:11px;font-style:italic}
+.budget-totals td:first-child{width:55px}
+.budget-totals tr:last-child{background:#eef3ff;font-weight:900}
+.budget-sign{text-align:center;margin-top:4px;line-height:1.08;font-size:11px;font-style:italic;font-weight:900}
+.budget-sign b{display:block;font-size:14px;text-decoration:underline}
 @media(max-width:1500px){.app{grid-template-columns:minmax(560px,620px) minmax(780px,1fr);gap:18px}.panel{padding:18px}.sheet{transform-origin:top center;transform:scale(.96);margin-bottom:-36px}}
 @media(max-width:1200px){.app{grid-template-columns:1fr}.panel{max-height:none;overflow:visible}.sheet{width:210mm;min-height:auto;transform:none;margin-bottom:0}.sheet-header{grid-template-columns:48% 52%}.quote-block{border-left:1px solid #d7dee9;border-radius:0;padding:3px 0 0 16px}.date-block-under{padding:0}.brand-logo{max-width:235px;max-height:82px}}
-@media(max-width:700px){.app{padding:10px}.grid,.item-row .grid,.technical-grid,.spec-row,.cargo-row{grid-template-columns:1fr}.panel{padding:14px}.sheet{width:100%;overflow:hidden}.sheet-header,.preorder-header,.preorder-info-grid,.preorder-bottom,.preorder-two-cols{grid-template-columns:1fr}.preorder-doc{text-align:left}.preorder-mini-grid{margin-left:0}.quote-block{border:1px solid #d7dee9;border-radius:12px;padding:10px}.quote-number{font-size:46px}.quote-number.pre-number{font-size:30px}.preorder-number{font-size:30px}.brand-logo{max-width:220px;max-height:78px}.obs-totals{grid-template-columns:1fr}}
+@media(max-width:700px){.app{padding:10px}.grid,.item-row .grid,.technical-grid,.spec-row,.cargo-row{grid-template-columns:1fr}.panel{padding:14px}.sheet{width:100%;overflow:hidden}.sheet-header,.preorder-header,.preorder-info-grid,.preorder-bottom,.preorder-two-cols,.budget-top-info,.budget-bottom{grid-template-columns:1fr}.preorder-doc{text-align:left}.preorder-mini-grid{margin-left:0}.quote-block{border:1px solid #d7dee9;border-radius:12px;padding:10px}.quote-number{font-size:46px}.quote-number.pre-number{font-size:30px}.budget-header .quote-number.pre-number{font-size:30px}.preorder-number{font-size:30px}.brand-logo{max-width:220px;max-height:78px}.obs-totals{grid-template-columns:1fr}.budget-specs{grid-template-columns:1fr 8px 1fr}}
 @media print{
   @page{size:A4;margin:0}
   body{background:white}.app{display:block;padding:0}.panel{display:none}.sheet{box-shadow:none;margin:0;width:210mm;min-height:297mm;padding:12mm 12mm;transform:none}.preview-wrap{display:block}.sheet-header{page-break-inside:avoid}.quote-number{font-size:58px}.quote-number.pre-number{font-size:32px}.brand-logo{max-width:220px;max-height:78px}
-  .preorder-sheet{padding:11mm 12mm;font-size:10.5px}.preorder-header{page-break-inside:avoid}
+  .preorder-sheet{padding:11mm 12mm;font-size:10.5px}.preorder-header{page-break-inside:avoid}.budget-sheet{padding:9mm 12mm 8mm}.budget-header .quote-number.pre-number{font-size:42px}
 }
