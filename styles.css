@@ -10,11 +10,10 @@
   --rojo:#b42318;
 }
 *{box-sizing:border-box}
-body{margin:0;background:#eef2f6;color:var(--texto);font-family:Arial,Helvetica,sans-serif;overflow-y:auto}
-/* Layout cómodo: el formulario izquierdo queda más ancho y sin scroll interno.
-   Ahora el scroll lo maneja la página completa, no el panel de datos. */
-.app{display:grid;grid-template-columns:minmax(620px,700px) minmax(820px,1fr);gap:24px;min-height:100vh;padding:18px;align-items:start}
-.panel{background:white;border-radius:16px;padding:22px;box-shadow:0 6px 24px #0001;overflow:visible;max-height:none;min-width:0}
+html,body{height:100%}
+body{margin:0;background:#eef2f6;color:var(--texto);font-family:Arial,Helvetica,sans-serif;overflow:hidden}
+.app{display:grid;grid-template-columns:minmax(620px,700px) minmax(820px,1fr);gap:24px;height:100vh;padding:18px;align-items:start;overflow:hidden}
+.panel{background:white;border-radius:16px;padding:22px;box-shadow:0 6px 24px #0001;overflow-y:auto;overflow-x:hidden;max-height:calc(100vh - 36px);min-width:0;scrollbar-gutter:stable}
 h1{font-size:22px;margin:0 0 4px;color:var(--azul)}
 .sub{margin:0 0 16px;color:#5b6573;font-size:13px;line-height:1.35}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -44,7 +43,7 @@ button:disabled{opacity:.55;cursor:not-allowed;transform:none}
 .technical-box{border:1px solid var(--borde);border-radius:12px;padding:12px;background:#fbfcfe}
 .spec-row{display:grid;grid-template-columns:minmax(120px,1fr) minmax(120px,1fr) auto;gap:8px;align-items:end;margin-bottom:8px}
 .cargo-row{display:grid;grid-template-columns:minmax(220px,1fr) 92px 120px 120px auto;gap:8px;align-items:end;margin-bottom:8px}
-.preview-wrap{display:flex;justify-content:center;align-items:flex-start;overflow:auto;min-width:0}
+.preview-wrap{display:flex;justify-content:center;align-items:flex-start;overflow:auto;min-width:0;max-height:calc(100vh - 36px);position:sticky;top:18px}
 .sheet{width:210mm;min-height:297mm;background:white;padding:13mm 12mm;margin:auto;box-shadow:0 8px 28px #0002;font-size:12px}
 .sheet-header{display:grid;grid-template-columns:48% 52%;gap:12px;align-items:start;border-bottom:2px solid #dce4ef;padding-bottom:8px;margin-bottom:12px}
 .brand-block{line-height:1.12;text-align:left;font-size:10.5px}
@@ -140,7 +139,7 @@ button:disabled{opacity:.55;cursor:not-allowed;transform:none}
 .budget-sign{text-align:center;margin-top:4px;line-height:1.08;font-size:11px;font-style:italic;font-weight:900}
 .budget-sign b{display:block;font-size:14px;text-decoration:underline}
 @media(max-width:1500px){.app{grid-template-columns:minmax(560px,620px) minmax(780px,1fr);gap:18px}.panel{padding:18px}.sheet{transform-origin:top center;transform:scale(.96);margin-bottom:-36px}}
-@media(max-width:1200px){.app{grid-template-columns:1fr}.panel{max-height:none;overflow:visible}.sheet{width:210mm;min-height:auto;transform:none;margin-bottom:0}.sheet-header{grid-template-columns:48% 52%}.quote-block{border-left:1px solid #d7dee9;border-radius:0;padding:3px 0 0 16px}.date-block-under{padding:0}.brand-logo{max-width:235px;max-height:82px}}
+@media(max-width:1200px){body{overflow-y:auto}.app{grid-template-columns:1fr;height:auto;min-height:100vh;overflow:visible}.panel{max-height:none;overflow:visible}.preview-wrap{max-height:none;position:static}.sheet{width:210mm;min-height:auto;transform:none;margin-bottom:0}.sheet-header{grid-template-columns:48% 52%}.quote-block{border-left:1px solid #d7dee9;border-radius:0;padding:3px 0 0 16px}.date-block-under{padding:0}.brand-logo{max-width:235px;max-height:82px}}
 @media(max-width:700px){.app{padding:10px}.grid,.item-row .grid,.technical-grid,.spec-row,.cargo-row{grid-template-columns:1fr}.panel{padding:14px}.sheet{width:100%;overflow:hidden}.sheet-header,.preorder-header,.preorder-info-grid,.preorder-bottom,.preorder-two-cols,.budget-top-info,.budget-bottom{grid-template-columns:1fr}.preorder-doc{text-align:left}.preorder-mini-grid{margin-left:0}.quote-block{border:1px solid #d7dee9;border-radius:12px;padding:10px}.quote-number{font-size:46px}.quote-number.pre-number{font-size:30px}.budget-header .quote-number.pre-number{font-size:30px}.preorder-number{font-size:30px}.brand-logo{max-width:220px;max-height:78px}.obs-totals{grid-template-columns:1fr}.budget-specs{grid-template-columns:1fr 8px 1fr}}
 @media print{
   @page{size:A4;margin:0}
