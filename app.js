@@ -75,6 +75,8 @@ let counterStatus = { type:'warn', text:'Número generado en modo local. Configu
 let saveStatus = { type:'warn', text:'Guarda el documento para activar PDF / Imprimir.' };
 let loadingNumber = false;
 let savingDoc = false;
+let busyMessage = '';
+let actionMessage = '';
 let supabaseClient = null;
 let state = loadCurrent();
 let saved = JSON.parse(localStorage.getItem('th_saved')||'[]');
@@ -170,7 +172,7 @@ function cargosTotal(doc=state){return cargosPreOrden(doc).reduce((s,it)=>s+subt
 function totalsPreOrden(doc=state){const base=totalsFromDoc(doc); const neto=base.neto + cargosTotal(doc); const iva=neto*IVA; return {neto,iva,total:neto+iva}}
 function persist(){localStorage.setItem(AUTOSAVE_KEY,JSON.stringify({savedAtMs:Date.now(),doc:state}))}
 function clearAutosave(){localStorage.removeItem(AUTOSAVE_KEY); localStorage.removeItem(LEGACY_CURRENT_KEY)}
-function markDirty(){state.dirty=true; state.savedAt=null; state.savedInSupabase=false; saveStatus={type:'warn', text:'Hay cambios sin guardar. Guarda antes de imprimir o emitir.'};}
+function markDirty(){state.dirty=true; state.savedAt=null; state.savedInSupabase=false; actionMessage=''; saveStatus={type:'warn', text:'Hay cambios sin guardar. Guarda antes de imprimir o emitir.'};}
 function setSilent(k,v){state[k]=v; markDirty(); persist()}
 function syncReferenciaText(){state.referencia=(state.referencias||[]).map(ref=>ref.texto).filter(Boolean).join('\n'); state.items=allItems()}
 function setRefItemSilent(r,i,k,v){state.referencias[r].items[i][k]=v; syncReferenciaText(); markDirty(); persist()}
@@ -604,13 +606,19 @@ async function newDoc(){
     dirty:true
   };
   saveStatus = { type:'warn', text:'Nueva pre-cotización sin guardar. Guarda para imprimir/enviar al cliente.' };
+  actionMessage = '';
+  busyMessage = '';
   render();
 }
 
 async function saveDoc(){
   if (savingDoc) return;
   savingDoc = true;
-  saveStatus = { type:'warn', text:'Guardando pre-cotización...' };
+  busyMessage = state.numeroReservado
+    ? 'Guardando cotización final...'
+    : 'Guardando PRE factura o pre-cotización...';
+  actionMessage = '';
+  saveStatus = { type:'warn', text:busyMessage };
   render();
 
   try {
@@ -626,9 +634,11 @@ async function saveDoc(){
       const { data, error } = await query.select('*').single();
       if (error) throw error;
       state = docFromDb(data);
-      saveStatus = state.numeroReservado
-        ? { type:'ok', text:'Cotización final guardada en Supabase. PDF / Imprimir habilitado.' }
-        : { type:'ok', text:'Pre-cotización guardada. Puedes imprimir/enviar al cliente o emitir si fue aprobada.' };
+      actionMessage = state.numeroReservado
+        ? 'Cotización guardada. Puede imprimir o guardar en PDF.'
+        : 'Ahora puede Imprimir/Guardar el Archivo en PDF para enviar al cliente o puede Emitir la Cotización.';
+      saveStatus = { type:'ok', text:actionMessage };
+      busyMessage = '';
       clearAutosave();
       await loadSavedDocs();
     } else {
@@ -641,13 +651,20 @@ async function saveDoc(){
       const record = {id, doc:JSON.parse(JSON.stringify(state)), source:'local'};
       if (existing >= 0) saved[existing] = record; else saved.unshift(record);
       localStorage.setItem('th_saved',JSON.stringify(saved.slice(0,50)));
-      saveStatus = { type:'warn', text:'Guardado local. Para uso multiusuario necesitas Supabase.' };
+      actionMessage = state.numeroReservado
+        ? 'Cotización guardada. Puede imprimir o guardar en PDF.'
+        : 'Ahora puede Imprimir/Guardar el Archivo en PDF para enviar al cliente o puede Emitir la Cotización.';
+      saveStatus = { type:'warn', text:`${actionMessage} Guardado local: para uso multiusuario necesitas Supabase.` };
+      busyMessage = '';
       clearAutosave();
     }
   } catch (err) {
     console.error(err);
+    busyMessage = '';
+    actionMessage = '';
     saveStatus = { type:'bad', text:`No se pudo guardar: ${errorText(err)}` };
   } finally {
+    busyMessage = '';
     savingDoc = false;
     render();
   }
@@ -660,7 +677,9 @@ async function emitDoc(){
     render();
     return;
   }
-  saveStatus = { type:'warn', text:'Emitiendo cotización final...' };
+  busyMessage = 'Emitiendo cotización final...';
+  actionMessage = '';
+  saveStatus = { type:'warn', text:busyMessage };
   render();
   try {
     savingDoc = true;
@@ -680,7 +699,9 @@ async function emitDoc(){
         .single();
       if (updateError) throw updateError;
       state = docFromDb(updated);
-      saveStatus = { type:'ok', text:'Cotización emitida con número final seguro.' };
+      actionMessage = 'Cotización emitida, puede Imprimir o Guardar en PDF.';
+      saveStatus = { type:'ok', text:actionMessage };
+      busyMessage = '';
       clearAutosave();
       await loadSavedDocs();
     } else {
@@ -692,7 +713,9 @@ async function emitDoc(){
       state.preSnapshot = preSnapshot;
       state.dirty = false;
       state.savedAt = new Date().toLocaleString('es-CL');
-      saveStatus = { type:'warn', text:'Cotización emitida en modo local. Para multiusuario usa Supabase.' };
+      actionMessage = 'Cotización emitida, puede Imprimir o Guardar en PDF.';
+      saveStatus = { type:'warn', text:`${actionMessage} Modo local: para multiusuario usa Supabase.` };
+      busyMessage = '';
       const id = state.id || Date.now();
       state.id = id;
       const existing = saved.findIndex(x => String(x.id) === String(id));
@@ -703,8 +726,11 @@ async function emitDoc(){
     }
   } catch (err) {
     console.error(err);
+    busyMessage = '';
+    actionMessage = '';
     saveStatus = { type:'bad', text:`No se pudo emitir: ${errorText(err)}` };
   } finally {
+    busyMessage = '';
     savingDoc = false;
     render();
   }
@@ -744,7 +770,7 @@ function render(){
   const t=totals();
   const statusClass = counterStatus.type === 'ok' ? 'ok' : counterStatus.type === 'bad' ? 'bad' : 'warn';
   const saveClass = saveStatus.type === 'ok' ? 'ok' : saveStatus.type === 'bad' ? 'bad' : 'warn';
-  const exportDisabled = !canExport();
+  const exportDisabled = !canExport() || savingDoc;
   const emitDisabled = !canEmit() || savingDoc;
   const docLabel = state.numeroReservado ? 'COTIZACIÓN' : 'PRE-COTIZACIÓN';
   const displayNumber = loadingNumber ? '...' : (state.numeroReservado ? state.numero : (state.preNumero || 'SIN GUARDAR'));
@@ -764,6 +790,7 @@ function render(){
   if (!app) return;
   app.innerHTML=`
   <main class="app">
+    ${busyMessage ? `<div class="busy-overlay" role="alert" aria-live="assertive"><div class="busy-box"><div class="spinner"></div><b>${esc(busyMessage)}</b><span>Espere unos segundos. No cierre la página ni presione otro botón.</span></div></div>` : ''}
     <aside class="panel">
       <h1>TH Cotizaciones</h1>
       <p class="sub">Formato actual de Técnica Hidráulica, con logo, número bloqueado, contador y guardado en Supabase.</p>
@@ -771,6 +798,7 @@ function render(){
       <div class="section-title">Documento</div>
       <div class="status"><span class="dot ${statusClass}"></span><span>${esc(counterStatus.text)}</span></div>
       <div class="status"><span class="dot ${saveClass}"></span><span>${esc(saveStatus.text)}</span></div>
+      ${actionMessage ? `<div class="action-message"><b>${esc(actionMessage)}</b></div>` : ''}
       ${autosaveText() ? `<div class="status"><span class="dot warn"></span><span>${esc(autosaveText())}</span></div>` : ''}
       <div class="grid">
         <div class="field">
