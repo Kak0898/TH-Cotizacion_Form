@@ -22,7 +22,7 @@ const PRE_SPEC_LABELS = [
   'Ancho exterior horquillas',
   'Batería',
   'Capacidad carga',
-  'Capacidad carga a 6,0 metros',
+  'Capacidad carga en altura',
   'Cargador de batería',
   'Color',
   'Largo útil de las horquillas',
@@ -382,6 +382,7 @@ function renderPreOrdenSheet(t, displayNumber, doc=state){
           <tr><th colspan="2">DATOS CLIENTE</th></tr>
           <tr><td class="label">Señor(es)</td><td>${esc(doc.cliente)}</td></tr>
           <tr><td class="label">Contacto</td><td>${esc(doc.contacto)}</td></tr>
+          <tr><td class="label">Rut</td><td>${esc(doc.rut)}</td></tr>
           <tr><td class="label">E-mail</td><td>${esc(doc.email)}</td></tr>
           <tr><td class="label">Fono</td><td>${esc(doc.telefono)}</td></tr>
           <tr><td class="label">Fecha</td><td>${formatDateDisplay(doc.fecha)}</td></tr>
@@ -863,10 +864,10 @@ function render(options={}){
       <div class="field"><label>Señor(es)</label><input value="${esc(state.cliente)}" oninput="setSilent('cliente',this.value)" onchange="render({preserveScroll:true})" placeholder="Walmart"></div>
       <div class="grid">
         <div class="field"><label>Contacto</label><input value="${esc(state.contacto)}" oninput="setSilent('contacto',this.value)" onchange="render({preserveScroll:true})" placeholder="Sandra Nuñez"></div>
+        <div class="field"><label>RUT cliente</label><input inputmode="text" autocomplete="off" value="${esc(state.rut)}" oninput="this.value=formatRut(this.value);setRutSilent(this.value)" onchange="render({preserveScroll:true})" placeholder="12.345.678-9"></div>
         <div class="field"><label>Teléfono</label><input inputmode="numeric" autocomplete="off" value="${esc(state.telefono)}" oninput="this.value=formatPhone(this.value);setPhoneSilent(this.value)" onchange="render({preserveScroll:true})" placeholder="56961280283"></div>
         <div class="field"><label>E-mail</label><input value="${esc(state.email)}" oninput="setSilent('email',this.value)" onchange="render({preserveScroll:true})" placeholder="sandra.nunez1@walmart.com"></div>
         ${isFinal ? `
-          <div class="field"><label>RUT cliente</label><input inputmode="text" autocomplete="off" value="${esc(state.rut)}" oninput="this.value=formatRut(this.value);setRutSilent(this.value)" onchange="render({preserveScroll:true})" placeholder="12.345.678-9"></div>
           <div class="field"><label>Dirección</label><input value="${esc(state.direccion)}" oninput="setSilent('direccion',this.value)" onchange="render({preserveScroll:true})"></div>
           <div class="field"><label>Giro</label><input value="${esc(state.giro)}" oninput="setSilent('giro',this.value)" onchange="render({preserveScroll:true})"></div>
           <div class="field"><label>Región</label><select onchange="setRegionSilent(this.value)">${options(REGIONES_COMUNAS.map(r=>r.region), state.ciudad, 'Selecciona región')}</select></div>
