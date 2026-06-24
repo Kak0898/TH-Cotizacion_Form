@@ -751,6 +751,7 @@ function render(){
   const printTitle = state.numeroReservado ? 'Exportar PDF / Imprimir' : 'Imprimir PRE / PDF';
   const exportTitle = exportDisabled ? 'Primero guarda el documento actual' : '';
   const emitTitle = emitDisabled && !state.numeroReservado ? 'Primero guarda la PRE sin cambios pendientes' : '';
+  const isFinal = state.numeroReservado;
   const hasPreSnapshot = Boolean(state.numeroReservado && state.preSnapshot?.doc);
   const previewDoc = hasPreSnapshot && previewMode === 'pre' ? state.preSnapshot.doc : state;
   const previewPreTotals = hasPreSnapshot && previewMode === 'pre'
@@ -782,20 +783,22 @@ function render(){
           <span class="small">${state.numeroReservado ? 'Número final bloqueado.' : 'El número final se asigna al emitir.'}</span>
         </div>
         <div class="field"><label>Fecha emisión</label><input type="date" value="${esc(state.fecha)}" oninput="setSilent('fecha',this.value)" onchange="render()"></div>
-        <div class="field"><label>Fecha vencimiento</label><input type="date" value="${esc(state.vcto)}" oninput="setSilent('vcto',this.value)" onchange="render()"></div>
+        ${isFinal ? `<div class="field"><label>Fecha vencimiento</label><input type="date" value="${esc(state.vcto)}" oninput="setSilent('vcto',this.value)" onchange="render()"></div>` : ''}
       </div>
 
-      <div class="section-title">Cliente</div>
+      <div class="section-title">${isFinal ? 'Cliente cotización final' : 'Cliente PRE'}</div>
       <div class="field"><label>Señor(es)</label><input value="${esc(state.cliente)}" oninput="setSilent('cliente',this.value)" onchange="render()" placeholder="Walmart"></div>
       <div class="grid">
         <div class="field"><label>Contacto</label><input value="${esc(state.contacto)}" oninput="setSilent('contacto',this.value)" onchange="render()" placeholder="Sandra Nuñez"></div>
-        <div class="field"><label>RUT</label><input inputmode="text" autocomplete="off" value="${esc(state.rut)}" oninput="this.value=formatRut(this.value);setRutSilent(this.value)" onchange="render()" placeholder="12.345.678-9"></div>
-        <div class="field"><label>Dirección</label><input value="${esc(state.direccion)}" oninput="setSilent('direccion',this.value)" onchange="render()"></div>
-        <div class="field"><label>Giro</label><input value="${esc(state.giro)}" oninput="setSilent('giro',this.value)" onchange="render()"></div>
-        <div class="field"><label>Región</label><select onchange="setRegionSilent(this.value)">${options(REGIONES_COMUNAS.map(r=>r.region), state.ciudad, 'Selecciona región')}</select></div>
-        <div class="field"><label>Comuna</label><select ${state.ciudad ? '' : 'disabled'} onchange="setSilent('comuna',this.value);render()">${options(getComunas(state.ciudad), state.comuna, state.ciudad ? 'Selecciona comuna' : 'Primero selecciona región')}</select></div>
         <div class="field"><label>Teléfono</label><input inputmode="numeric" autocomplete="off" value="${esc(state.telefono)}" oninput="this.value=formatPhone(this.value);setPhoneSilent(this.value)" onchange="render()" placeholder="56961280283"></div>
         <div class="field"><label>E-mail</label><input value="${esc(state.email)}" oninput="setSilent('email',this.value)" onchange="render()" placeholder="sandra.nunez1@walmart.com"></div>
+        ${isFinal ? `
+          <div class="field"><label>RUT cliente</label><input inputmode="text" autocomplete="off" value="${esc(state.rut)}" oninput="this.value=formatRut(this.value);setRutSilent(this.value)" onchange="render()" placeholder="12.345.678-9"></div>
+          <div class="field"><label>Dirección</label><input value="${esc(state.direccion)}" oninput="setSilent('direccion',this.value)" onchange="render()"></div>
+          <div class="field"><label>Giro</label><input value="${esc(state.giro)}" oninput="setSilent('giro',this.value)" onchange="render()"></div>
+          <div class="field"><label>Región</label><select onchange="setRegionSilent(this.value)">${options(REGIONES_COMUNAS.map(r=>r.region), state.ciudad, 'Selecciona región')}</select></div>
+          <div class="field"><label>Comuna</label><select ${state.ciudad ? '' : 'disabled'} onchange="setSilent('comuna',this.value);render()">${options(getComunas(state.ciudad), state.comuna, state.ciudad ? 'Selecciona comuna' : 'Primero selecciona región')}</select></div>
+        ` : ''}
       </div>
 
       <div class="section-title">Referencias</div>
@@ -809,12 +812,12 @@ function render(){
           ${(ref.items || []).map((it,i)=>`
             <div class="item-row">
               <div class="grid">
-                <div class="field"><label>Código</label><input value="${esc(it.codigo)}" oninput="setRefItemSilent(${r},${i},'codigo',this.value)" onchange="render()" placeholder="ETV 214"></div>
+                ${isFinal ? `<div class="field"><label>Código</label><input value="${esc(it.codigo)}" oninput="setRefItemSilent(${r},${i},'codigo',this.value)" onchange="render()" placeholder="ETV 214"></div>` : ''}
                 <div class="field item-description-field"><label>Descripción</label><textarea class="item-description-input" placeholder="Arriendo mensual apilador eléctrico ETV 214" oninput="setRefItemSilent(${r},${i},'descripcion',this.value)" onchange="render()">${esc(it.descripcion)}</textarea></div>
                 <div class="field"><label>Cantidad</label><input type="number" value="${esc(it.cantidad)}" oninput="setRefItemSilent(${r},${i},'cantidad',this.value)" onchange="render()"></div>
-                <div class="field"><label>U.M.</label><input value="${esc(it.um)}" oninput="setRefItemSilent(${r},${i},'um',this.value)" onchange="render()"></div>
+                ${isFinal ? `<div class="field"><label>U.M.</label><input value="${esc(it.um)}" oninput="setRefItemSilent(${r},${i},'um',this.value)" onchange="render()"></div>` : ''}
                 <div class="field"><label>Precio</label><input type="number" value="${esc(it.precio)}" oninput="setRefItemSilent(${r},${i},'precio',this.value)" onchange="render()" placeholder="1015267"></div>
-                <div class="field"><label>Dscto %</label><input type="number" value="${esc(it.dscto)}" oninput="setRefItemSilent(${r},${i},'dscto',this.value)" onchange="render()"></div>
+                ${isFinal ? `<div class="field"><label>Dscto %</label><input type="number" value="${esc(it.dscto)}" oninput="setRefItemSilent(${r},${i},'dscto',this.value)" onchange="render()"></div>` : ''}
                 <div class="field"><label>Subtotal</label><input readonly value="${money(subtotalItem(it))}"></div>
                 <button class="danger" onclick="delRefItem(${r},${i})">Eliminar ítem</button>
               </div>
@@ -823,6 +826,7 @@ function render(){
         </div>`).join('')}
       <button class="ghost" onclick="addReferencia()">+ Agregar referencia</button>
 
+      ${!isFinal ? `
       <div class="section-title">Pre-orden técnica</div>
       <div class="field"><label>Título / servicio destacado</label><textarea placeholder="${esc(EJEMPLO_SERVICIO)}" oninput="setPreOrdenSilent('servicio',this.value)" onchange="render()">${esc(state.preOrden?.servicio || '')}</textarea></div>
       <div class="technical-grid">
@@ -857,11 +861,12 @@ function render(){
           <button class="danger" onclick="delCargo(${i})">Eliminar</button>
         </div>`).join('')}
       <button class="ghost" onclick="addCargo()">+ Agregar cargo adicional</button>
+      ` : ''}
 
       <div class="section-title">Observaciones</div>
-      <div class="field"><label>Observaciones / notas</label><textarea placeholder="${esc(EJEMPLO_NOTAS)}" oninput="setSilent('observaciones',this.value)" onchange="render()">${esc(state.observaciones)}</textarea></div>
-      <div class="field"><label>Garantía / validez</label><input value="${esc(state.garantia)}" oninput="setSilent('garantia',this.value)" onchange="render()" placeholder="15 días"></div>
-      <div class="field"><label>Condiciones / forma de pago</label><textarea placeholder="30 días" oninput="setSilent('condiciones',this.value)" onchange="render()">${esc(state.condiciones||'')}</textarea></div>
+      <div class="field"><label>${isFinal ? 'Observaciones cotización' : 'Observaciones / notas PRE'}</label><textarea placeholder="${esc(EJEMPLO_NOTAS)}" oninput="setSilent('observaciones',this.value)" onchange="render()">${esc(state.observaciones)}</textarea></div>
+      <div class="field"><label>${isFinal ? 'Garantía' : 'Garantía / validez'}</label><input value="${esc(state.garantia)}" oninput="setSilent('garantia',this.value)" onchange="render()" placeholder="15 días"></div>
+      <div class="field"><label>${isFinal ? 'Condiciones comerciales' : 'Condiciones / forma de pago'}</label><textarea placeholder="30 días" oninput="setSilent('condiciones',this.value)" onchange="render()">${esc(state.condiciones||'')}</textarea></div>
 
       <div class="btns sticky-actions">
         <button class="green" onclick="window.print()" ${exportDisabled ? `disabled title="${esc(exportTitle)}"` : ''}>${esc(printTitle)}</button>
