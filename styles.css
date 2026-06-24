@@ -23,6 +23,7 @@ input,textarea,select{border:1px solid var(--borde);border-radius:10px;padding:1
 input[readonly]{background:#f5f7fb;color:#0b2f66;font-weight:900;letter-spacing:.8px;cursor:not-allowed}
 .locked-number{font-size:22px;text-align:center;border:2px solid #c7d3e5;background:#f7faff!important;color:#0b2f66!important}
 textarea{min-height:72px;resize:vertical}
+.notes-input{min-height:190px;line-height:1.35}
 .section-title{margin:18px 0 8px;padding:8px 10px;background:var(--gris);border-radius:10px;font-weight:800;color:var(--azul)}
 button{border:0;border-radius:10px;padding:11px 13px;font-weight:800;cursor:pointer;transition:.12s transform,.12s opacity}
 button:hover{transform:translateY(-1px)}
@@ -50,6 +51,11 @@ button:disabled{opacity:.55;cursor:not-allowed;transform:none}
 .technical-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .technical-box{border:1px solid var(--borde);border-radius:12px;padding:12px;background:#fbfcfe}
 .spec-row{display:grid;grid-template-columns:minmax(120px,1fr) minmax(120px,1fr) auto;gap:8px;align-items:end;margin-bottom:8px}
+.fixed-spec-box{margin-bottom:14px}
+.fixed-spec-row{display:grid;grid-template-columns:minmax(220px,1fr) minmax(180px,1fr);gap:10px;align-items:end;border-bottom:1px solid #e7ecf3;padding:7px 0}
+.fixed-spec-row:last-child{border-bottom:0}
+.fixed-spec-name{font-size:13px;font-weight:800;color:#263244;padding:10px 0 9px}
+.fixed-spec-row .field{margin-bottom:0}
 .cargo-row{display:grid;grid-template-columns:minmax(220px,1fr) 92px 120px 120px auto;gap:8px;align-items:end;margin-bottom:8px}
 .preview-wrap{display:flex;justify-content:center;align-items:flex-start;overflow:auto;min-width:0;max-height:calc(100vh - 36px);position:sticky;top:18px}
 .sheet{width:210mm;min-height:297mm;background:white;padding:13mm 12mm;margin:auto;box-shadow:0 8px 28px #0002;font-size:12px}
@@ -148,7 +154,7 @@ button:disabled{opacity:.55;cursor:not-allowed;transform:none}
 .budget-sign b{display:block;font-size:14px;text-decoration:underline}
 @media(max-width:1500px){.app{grid-template-columns:minmax(560px,620px) minmax(780px,1fr);gap:18px}.panel{padding:18px}.sheet{transform-origin:top center;transform:scale(.96);margin-bottom:-36px}}
 @media(max-width:1200px){body{overflow-y:auto}.app{grid-template-columns:1fr;height:auto;min-height:100vh;overflow:visible}.panel{max-height:none;overflow:visible}.preview-wrap{max-height:none;position:static}.sheet{width:210mm;min-height:auto;transform:none;margin-bottom:0}.sheet-header{grid-template-columns:48% 52%}.quote-block{border-left:1px solid #d7dee9;border-radius:0;padding:3px 0 0 16px}.date-block-under{padding:0}.brand-logo{max-width:235px;max-height:82px}}
-@media(max-width:700px){.app{padding:10px}.grid,.item-row .grid,.technical-grid,.spec-row,.cargo-row{grid-template-columns:1fr}.panel{padding:14px}.sheet{width:100%;overflow:hidden}.sheet-header,.preorder-header,.preorder-info-grid,.preorder-bottom,.preorder-two-cols,.budget-top-info,.budget-bottom{grid-template-columns:1fr}.preorder-doc{text-align:left}.preorder-mini-grid{margin-left:0}.quote-block{border:1px solid #d7dee9;border-radius:12px;padding:10px}.quote-number{font-size:46px}.quote-number.pre-number{font-size:30px}.budget-header .quote-number.pre-number{font-size:30px}.preorder-number{font-size:30px}.brand-logo{max-width:220px;max-height:78px}.obs-totals{grid-template-columns:1fr}.budget-specs{grid-template-columns:1fr 8px 1fr}}
+@media(max-width:700px){.app{padding:10px}.grid,.item-row .grid,.technical-grid,.spec-row,.fixed-spec-row,.cargo-row{grid-template-columns:1fr}.panel{padding:14px}.sheet{width:100%;overflow:hidden}.sheet-header,.preorder-header,.preorder-info-grid,.preorder-bottom,.preorder-two-cols,.budget-top-info,.budget-bottom{grid-template-columns:1fr}.preorder-doc{text-align:left}.preorder-mini-grid{margin-left:0}.quote-block{border:1px solid #d7dee9;border-radius:12px;padding:10px}.quote-number{font-size:46px}.quote-number.pre-number{font-size:30px}.budget-header .quote-number.pre-number{font-size:30px}.preorder-number{font-size:30px}.brand-logo{max-width:220px;max-height:78px}.obs-totals{grid-template-columns:1fr}.budget-specs{grid-template-columns:1fr 8px 1fr}}
 @media print{
   @page{size:A4;margin:0}
   body{background:white}.app{display:block;padding:0}.panel{display:none}.sheet{box-shadow:none;margin:0;width:210mm;min-height:297mm;padding:12mm 12mm;transform:none}.preview-wrap{display:block}.sheet-header{page-break-inside:avoid}.quote-number{font-size:58px}.quote-number.pre-number{font-size:32px}.brand-logo{max-width:220px;max-height:78px}

@@ -16,6 +16,25 @@ const EJEMPLO_NOTAS = `1.- Período mínimo de arriendo: 30 días
 7.- Walmart se compromete a utilizar operarios de apiladores eléctricos con su Licencia de Conducir al día.
 8.- Valores pagaderos en moneda nacional según Unidad de Fomento (UF) al momento de la facturación.
 9.- Se entenderá y presumirá con la aceptación de la presente Cotización y recepción de la Orden de Compra (OC), la celebración del Contrato de Arriendo cuyas cláusulas mínimas son las precedentes.`;
+const PRE_SPEC_LABELS = [
+  'Altura mástil replegado',
+  'Altura útil de levante',
+  'Ancho exterior horquillas',
+  'Batería',
+  'Capacidad carga',
+  'Capacidad carga a 6,0 metros',
+  'Cargador de batería',
+  'Color',
+  'Largo útil de las horquillas',
+  'Mástil',
+  'Operador',
+  'Peso del equipo c/batería',
+  'Radio de giro',
+  'Tipo',
+  'Tipo de freno',
+  'Tipo de pallet',
+  'Tipo ruedas'
+];
 const REGIONES_COMUNAS = [
   {region:'Arica y Parinacota', comunas:['Arica','Camarones','Putre','General Lagos']},
   {region:'Tarapacá', comunas:['Iquique','Alto Hospicio','Pozo Almonte','Camiña','Colchane','Huara','Pica']},
@@ -58,13 +77,13 @@ const defaultDoc = {
   referencias:[{texto:'', items:[{codigo:'', descripcion:'', cantidad:1, um:'UN', precio:0, dscto:0}]}],
   preOrden:{
     servicio:'',
-    caracteristicas:[{nombre:'', valor:''}],
-    datosOperativos:[{nombre:'', valor:''}],
+    caracteristicas:PRE_SPEC_LABELS.map(nombre=>({nombre, valor:''})),
+    datosOperativos:[],
     cargos:[{detalle:'', precio:0, cantidad:1}]
   },
   garantia:'30 días',
   condiciones:'',
-  observaciones:'',
+  observaciones:EJEMPLO_NOTAS,
   items:[],
   savedAt:null,
   savedInSupabase:false,
@@ -107,6 +126,7 @@ function loadCurrent(){
   doc.estado = doc.estado || (doc.numeroReservado ? 'cotizacion_emitida' : 'pre_cotizacion');
   doc.tipo = doc.numeroReservado ? 'COTIZACIÓN' : 'PRE-COTIZACIÓN';
   doc.preNumero = doc.preNumero || '';
+  if (!doc.numeroReservado && !String(doc.observaciones || '').trim()) doc.observaciones = EJEMPLO_NOTAS;
   if (doc.numero) {
     const n = Number(doc.numero);
     if (!Number.isFinite(n) || n < BASE_LAST_COTIZACION + 1 || String(doc.numero).length > 7) {
@@ -126,10 +146,10 @@ function initSupabase(){
   const cfg = window.TH_SUPABASE || {};
   if (cfg.url && cfg.anonKey && window.supabase) {
     supabaseClient = window.supabase.createClient(cfg.url, cfg.anonKey);
-    counterStatus = { type:'ok', text:'Supabase conectado para pre-cotizaciones y emisión segura.' };
+    counterStatus = { type:'ok', text:'Supabase conectado para presupuestos y emisión segura.' };
     saveStatus = state.savedAt && !state.dirty
       ? { type:'ok', text:'Documento guardado. PDF / Imprimir habilitado.' }
-      : { type:'warn', text:'Supabase conectado. Guarda la PRE para imprimirla o emitirla.' };
+      : { type:'warn', text:'Supabase conectado. Guarda el presupuesto para imprimirlo o emitirlo.' };
   }
 }
 
@@ -138,6 +158,20 @@ function money(v){
 }
 function blankItem(){return {codigo:'', descripcion:'', cantidad:1, um:'UN', precio:0, dscto:0}}
 function subtotalItem(it){return (Number(it.cantidad)||0)*(Number(it.precio)||0)*(1-(Number(it.dscto)||0)/100)}
+function specExample(i){return ['2.600 mm','6.000 mm','540 mm','24V / 220 AH','1.600 Kg','980 Kg','Incluido / Monofásico','Amarillo Industrial','1.150 mm','Doble','Hombre a Bordo','2500 Kg app','2.360 mm','PTP (*)','Magnético','Abierto','Poliuretano'][i] || ''}
+function normalizeSpecName(s){return String(s || '').trim().toLowerCase()}
+function fixedPreSpecs(po){
+  const existing = [
+    ...(Array.isArray(po?.caracteristicas) ? po.caracteristicas : []),
+    ...(Array.isArray(po?.datosOperativos) ? po.datosOperativos : [])
+  ].filter(Boolean);
+  const byName = new Map(existing.map(it=>[normalizeSpecName(it.nombre), it]));
+  return PRE_SPEC_LABELS.map((nombre,i)=>{
+    const matched = byName.get(normalizeSpecName(nombre));
+    const fallback = existing[i];
+    return {nombre, valor:matched?.valor ?? fallback?.valor ?? ''};
+  });
+}
 function normalizeReferencias(doc){
   const itemsAreSections = Array.isArray(doc.items) && doc.items.length && Array.isArray(doc.items[0]?.items);
   if (itemsAreSections && (!Array.isArray(doc.referencias) || typeof doc.referencias[0] === 'string')) {
@@ -158,8 +192,8 @@ function normalizeReferencias(doc){
   doc.referencia = doc.referencias.map(ref=>ref.texto).filter(Boolean).join('\n');
   doc.preOrden = {
     servicio: doc.preOrden?.servicio || '',
-    caracteristicas: Array.isArray(doc.preOrden?.caracteristicas) && doc.preOrden.caracteristicas.length ? doc.preOrden.caracteristicas : [blankSpec()],
-    datosOperativos: Array.isArray(doc.preOrden?.datosOperativos) && doc.preOrden.datosOperativos.length ? doc.preOrden.datosOperativos : [blankSpec()],
+    caracteristicas: fixedPreSpecs(doc.preOrden),
+    datosOperativos: [],
     cargos: Array.isArray(doc.preOrden?.cargos) && doc.preOrden.cargos.length ? doc.preOrden.cargos : [blankCargo()]
   };
 }
@@ -186,7 +220,16 @@ function blankCargo(){return {detalle:'', precio:0, cantidad:1}}
 function subtotalCargo(it){return (Number(it.cantidad)||1)*(Number(it.precio)||0)}
 function ensurePreOrden(){if (!state.preOrden) state.preOrden={servicio:'',caracteristicas:[],datosOperativos:[],cargos:[]}}
 function setPreOrdenSilent(k,v){ensurePreOrden(); state.preOrden[k]=v; markDirty(); persist()}
-function setSpecSilent(group,i,k,v){ensurePreOrden(); state.preOrden[group][i][k]=v; markDirty(); persist()}
+function setSpecSilent(group,i,k,v){
+  ensurePreOrden();
+  if (group === 'caracteristicas') state.preOrden.caracteristicas = fixedPreSpecs(state.preOrden);
+  if (!state.preOrden[group]) state.preOrden[group] = [];
+  if (!state.preOrden[group][i]) state.preOrden[group][i] = blankSpec();
+  state.preOrden[group][i][k]=v;
+  if (group === 'caracteristicas') state.preOrden[group][i].nombre = PRE_SPEC_LABELS[i] || state.preOrden[group][i].nombre || '';
+  markDirty();
+  persist();
+}
 function addSpec(group){ensurePreOrden(); state.preOrden[group].push(blankSpec()); markDirty(); persist(); render()}
 function delSpec(group,i){ensurePreOrden(); state.preOrden[group].splice(i,1); markDirty(); persist(); render()}
 function setCargoSilent(i,k,v){ensurePreOrden(); state.preOrden.cargos[i][k]=v; markDirty(); persist()}
@@ -207,6 +250,7 @@ function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&l
 function canExport(){return Boolean(state.savedAt && !state.dirty)}
 function canEmit(){return Boolean(!state.numeroReservado && state.id && state.savedAt && !state.dirty)}
 function errorText(err){return err?.message || err?.details || err?.hint || String(err || 'Error desconocido')}
+function cleanNoteLine(line){return String(line || '').trim().replace(/^\d+\s*\.-\s*/, '')}
 function autosaveText(){
   try {
     const raw = JSON.parse(localStorage.getItem(AUTOSAVE_KEY) || 'null');
@@ -300,14 +344,11 @@ function renderCotizacionSheet(t, docLabel, displayNumber){
 
 function renderPreOrdenSheet(t, displayNumber, doc=state){
   const po = doc.preOrden || {};
-  const specs = [
-    ...(Array.isArray(po.caracteristicas) ? po.caracteristicas : []),
-    ...(Array.isArray(po.datosOperativos) ? po.datosOperativos : [])
-  ].filter(it=>it.nombre || it.valor);
+  const specs = fixedPreSpecs(po);
   const cargos = (po.cargos || []).filter(it=>it.detalle || Number(it.precio));
   const notas = String(doc.observaciones || 'Documento sujeto a revisión y aprobación del cliente.')
     .split('\n')
-    .map(s=>s.trim())
+    .map(cleanNoteLine)
     .filter(Boolean);
   const mainRef = (doc.referencias || [])[0] || {texto:'', items:[]};
   const mainItems = mainRef.items || [];
@@ -325,7 +366,7 @@ function renderPreOrdenSheet(t, displayNumber, doc=state){
         </section>
         <section class="quote-block">
           <div class="quote-main">
-            <div class="quote-label">PRE-COTIZACIÓN N°</div>
+            <div class="quote-label">PRESUPUESTO N°</div>
             <div class="quote-number pre-number">${esc(displayNumber)}</div>
           </div>
           <div class="date-block date-block-under">
@@ -439,15 +480,15 @@ async function reservePreNumber(){
       const { data, error } = await supabaseClient.rpc('next_th_pre_cotizacion');
       if (error) throw error;
       state.preNumero = String(data);
-      counterStatus = { type:'ok', text:'Supabase conectado. Contador de pre-cotizaciones activo.' };
+      counterStatus = { type:'ok', text:'Supabase conectado. Contador de presupuestos activo.' };
     } else {
       state.preNumero = localNextPreNumber();
-      counterStatus = { type:'warn', text:'Modo local activo. Las pre-cotizaciones no son compartidas.' };
+      counterStatus = { type:'warn', text:'Modo local activo. Los presupuestos no son compartidos.' };
     }
   } catch (err) {
     console.error(err);
     state.preNumero = localNextPreNumber();
-    counterStatus = { type:'bad', text:'Supabase no respondió. Se usó contador PRE local.' };
+    counterStatus = { type:'bad', text:'Supabase no respondió. Se usó contador de presupuesto local.' };
   }
   persist();
   return state.preNumero;
@@ -562,6 +603,7 @@ function docFromDb(row){
     savedInSupabase: true,
     dirty: false
   };
+  if (!doc.numeroReservado && !String(doc.observaciones || '').trim()) doc.observaciones = EJEMPLO_NOTAS;
   normalizeReferencias(doc);
   return doc;
 }
@@ -599,13 +641,13 @@ async function newDoc(){
     vcto:'',
     cliente:'', contacto:'', rut:'', direccion:'', giro:'', comuna:'', telefono:'', ciudad:'', email:'',
     referencia:'', referencias:[{texto:'', items:[blankItem()]}], garantia:'30 días', condiciones:'',
-    preOrden:{servicio:'', caracteristicas:[blankSpec()], datosOperativos:[blankSpec()], cargos:[blankCargo()]},
+    preOrden:{servicio:'', caracteristicas:PRE_SPEC_LABELS.map(nombre=>({nombre, valor:''})), datosOperativos:[], cargos:[blankCargo()]},
     items:[],
     savedAt:null,
     savedInSupabase:false,
     dirty:true
   };
-  saveStatus = { type:'warn', text:'Nueva pre-cotización sin guardar. Guarda para imprimir/enviar al cliente.' };
+  saveStatus = { type:'warn', text:'Nuevo presupuesto sin guardar. Guarda para imprimir/enviar al cliente.' };
   actionMessage = '';
   busyMessage = '';
   render();
@@ -616,7 +658,7 @@ async function saveDoc(){
   savingDoc = true;
   busyMessage = state.numeroReservado
     ? 'Guardando cotización final...'
-    : 'Guardando PRE factura o pre-cotización...';
+    : 'Guardando presupuesto...';
   actionMessage = '';
   saveStatus = { type:'warn', text:busyMessage };
   render();
@@ -673,7 +715,7 @@ async function saveDoc(){
 async function emitDoc(){
   if (savingDoc || state.numeroReservado) return;
   if (!canEmit()) {
-    saveStatus = { type:'warn', text:'Primero guarda la pre-cotización actual antes de emitir.' };
+    saveStatus = { type:'warn', text:'Primero guarda el presupuesto actual antes de emitir.' };
     render();
     return;
   }
@@ -749,7 +791,7 @@ function loadDoc(id){
   state.savedAt = state.savedAt || new Date().toISOString();
   saveStatus = state.numeroReservado
     ? { type:'ok', text:'Cotización cargada. PDF / Imprimir habilitado.' }
-    : { type:'ok', text:'Pre-cotización cargada. Puedes imprimirla, editarla o emitirla si fue aprobada.' };
+    : { type:'ok', text:'Presupuesto cargado. Puedes imprimirlo, editarlo o emitirlo si fue aprobado.' };
   clearAutosave();
   render();
 }
@@ -772,11 +814,11 @@ function render(){
   const saveClass = saveStatus.type === 'ok' ? 'ok' : saveStatus.type === 'bad' ? 'bad' : 'warn';
   const exportDisabled = !canExport() || savingDoc;
   const emitDisabled = !canEmit() || savingDoc;
-  const docLabel = state.numeroReservado ? 'COTIZACIÓN' : 'PRE-COTIZACIÓN';
+  const docLabel = state.numeroReservado ? 'COTIZACIÓN' : 'PRESUPUESTO';
   const displayNumber = loadingNumber ? '...' : (state.numeroReservado ? state.numero : (state.preNumero || 'SIN GUARDAR'));
-  const printTitle = state.numeroReservado ? 'Exportar PDF / Imprimir' : 'Imprimir PRE / PDF';
+  const printTitle = state.numeroReservado ? 'Exportar PDF / Imprimir' : 'Imprimir presupuesto / PDF';
   const exportTitle = exportDisabled ? 'Primero guarda el documento actual' : '';
-  const emitTitle = emitDisabled && !state.numeroReservado ? 'Primero guarda la PRE sin cambios pendientes' : '';
+  const emitTitle = emitDisabled && !state.numeroReservado ? 'Primero guarda el presupuesto sin cambios pendientes' : '';
   const isFinal = state.numeroReservado;
   const hasPreSnapshot = Boolean(state.numeroReservado && state.preSnapshot?.doc);
   const previewDoc = hasPreSnapshot && previewMode === 'pre' ? state.preSnapshot.doc : state;
@@ -784,7 +826,7 @@ function render(){
     ? (state.preSnapshot.totals || totalsPreOrden(previewDoc))
     : totalsPreOrden(state);
   const previewPreNumber = hasPreSnapshot && previewMode === 'pre'
-    ? (state.preSnapshot.preNumero || previewDoc.preNumero || 'PRE GUARDADA')
+    ? (state.preSnapshot.preNumero || previewDoc.preNumero || 'PRESUPUESTO GUARDADO')
     : displayNumber;
   const app = document.getElementById('app');
   if (!app) return;
@@ -806,7 +848,7 @@ function render(){
           <input readonly value="${esc(docLabel)}">
         </div>
         <div class="field">
-          <label>${state.numeroReservado ? 'N° Cotización' : 'N° Pre-cotización'}</label>
+          <label>${state.numeroReservado ? 'N° Cotización' : 'N° Presupuesto'}</label>
           <input class="locked-number" readonly value="${esc(displayNumber)}" title="Número bloqueado">
           <span class="small">${state.numeroReservado ? 'Número final bloqueado.' : 'El número final se asigna al emitir.'}</span>
         </div>
@@ -814,7 +856,7 @@ function render(){
         ${isFinal ? `<div class="field"><label>Fecha vencimiento</label><input type="date" value="${esc(state.vcto)}" oninput="setSilent('vcto',this.value)" onchange="render()"></div>` : ''}
       </div>
 
-      <div class="section-title">${isFinal ? 'Cliente cotización final' : 'Cliente PRE'}</div>
+      <div class="section-title">${isFinal ? 'Cliente cotización final' : 'Cliente presupuesto'}</div>
       <div class="field"><label>Señor(es)</label><input value="${esc(state.cliente)}" oninput="setSilent('cliente',this.value)" onchange="render()" placeholder="Walmart"></div>
       <div class="grid">
         <div class="field"><label>Contacto</label><input value="${esc(state.contacto)}" oninput="setSilent('contacto',this.value)" onchange="render()" placeholder="Sandra Nuñez"></div>
@@ -829,55 +871,20 @@ function render(){
         ` : ''}
       </div>
 
-      <div class="section-title">Referencias</div>
-      ${(state.referencias || []).map((ref,r)=>`
-        <div class="reference-block">
-          <div class="reference-row">
-            <div class="field"><label>Referencia ${r+1}</label><textarea placeholder="Arriendo equipo apilador eléctrico" oninput="setReferenciaSilent(${r},this.value)" onchange="render()">${esc(ref.texto)}</textarea></div>
-            <button class="danger" onclick="delReferencia(${r})" ${(state.referencias || []).length <= 1 ? 'disabled' : ''}>Eliminar referencia</button>
-          </div>
-          <div class="section-title item-section-title">Ítems referencia ${r+1}</div>
-          ${(ref.items || []).map((it,i)=>`
-            <div class="item-row">
-              <div class="grid">
-                ${isFinal ? `<div class="field"><label>Código</label><input value="${esc(it.codigo)}" oninput="setRefItemSilent(${r},${i},'codigo',this.value)" onchange="render()" placeholder="ETV 214"></div>` : ''}
-                <div class="field item-description-field"><label>Descripción</label><textarea class="item-description-input" placeholder="Arriendo mensual apilador eléctrico ETV 214" oninput="setRefItemSilent(${r},${i},'descripcion',this.value)" onchange="render()">${esc(it.descripcion)}</textarea></div>
-                <div class="field"><label>Cantidad</label><input type="number" value="${esc(it.cantidad)}" oninput="setRefItemSilent(${r},${i},'cantidad',this.value)" onchange="render()"></div>
-                ${isFinal ? `<div class="field"><label>U.M.</label><input value="${esc(it.um)}" oninput="setRefItemSilent(${r},${i},'um',this.value)" onchange="render()"></div>` : ''}
-                <div class="field"><label>Precio</label><input type="number" value="${esc(it.precio)}" oninput="setRefItemSilent(${r},${i},'precio',this.value)" onchange="render()" placeholder="1015267"></div>
-                ${isFinal ? `<div class="field"><label>Dscto %</label><input type="number" value="${esc(it.dscto)}" oninput="setRefItemSilent(${r},${i},'dscto',this.value)" onchange="render()"></div>` : ''}
-                <div class="field"><label>Subtotal</label><input readonly value="${money(subtotalItem(it))}"></div>
-                <button class="danger" onclick="delRefItem(${r},${i})">Eliminar ítem</button>
-              </div>
-            </div>`).join('')}
-          <button class="ghost" onclick="addRefItem(${r})">+ Agregar ítem a referencia ${r+1}</button>
-        </div>`).join('')}
-      <button class="ghost" onclick="addReferencia()">+ Agregar referencia</button>
-
       ${!isFinal ? `
-      <div class="section-title">Pre-orden técnica</div>
+      <div class="section-title">Presupuesto técnico</div>
       <div class="field"><label>Título / servicio destacado</label><textarea placeholder="${esc(EJEMPLO_SERVICIO)}" oninput="setPreOrdenSilent('servicio',this.value)" onchange="render()">${esc(state.preOrden?.servicio || '')}</textarea></div>
-      <div class="technical-grid">
-        <div class="technical-box">
-          <div class="section-title item-section-title">Características técnicas</div>
-          ${(state.preOrden?.caracteristicas || []).map((it,i)=>`
-            <div class="spec-row">
-              <div class="field"><label>Nombre</label><input value="${esc(it.nombre)}" oninput="setSpecSilent('caracteristicas',${i},'nombre',this.value)" onchange="render()" placeholder="Altura mástil replegado"></div>
-              <div class="field"><label>Valor</label><input value="${esc(it.valor)}" oninput="setSpecSilent('caracteristicas',${i},'valor',this.value)" onchange="render()" placeholder="2.600 mm"></div>
-              <button class="danger" onclick="delSpec('caracteristicas',${i})">Eliminar</button>
-            </div>`).join('')}
-          <button class="ghost" onclick="addSpec('caracteristicas')">+ Agregar característica</button>
-        </div>
-        <div class="technical-box">
-          <div class="section-title item-section-title">Datos operativos</div>
-          ${(state.preOrden?.datosOperativos || []).map((it,i)=>`
-            <div class="spec-row">
-              <div class="field"><label>Nombre</label><input value="${esc(it.nombre)}" oninput="setSpecSilent('datosOperativos',${i},'nombre',this.value)" onchange="render()" placeholder="Operador"></div>
-              <div class="field"><label>Valor</label><input value="${esc(it.valor)}" oninput="setSpecSilent('datosOperativos',${i},'valor',this.value)" onchange="render()" placeholder="Hombre a Bordo"></div>
-              <button class="danger" onclick="delSpec('datosOperativos',${i})">Eliminar</button>
-            </div>`).join('')}
-          <button class="ghost" onclick="addSpec('datosOperativos')">+ Agregar dato operativo</button>
-        </div>
+      <div class="technical-box fixed-spec-box">
+        <div class="section-title item-section-title">Características técnicas</div>
+        <p class="small">Los nombres quedan fijos en el presupuesto. Completa solo el valor de cada línea.</p>
+        ${fixedPreSpecs(state.preOrden).map((it,i)=>`
+          <div class="fixed-spec-row">
+            <div class="fixed-spec-name">${esc(it.nombre)}</div>
+            <div class="field">
+              <label>Valor</label>
+              <input value="${esc(it.valor)}" oninput="setSpecSilent('caracteristicas',${i},'valor',this.value)" onchange="render()" placeholder="${esc(specExample(i))}">
+            </div>
+          </div>`).join('')}
       </div>
       <div class="section-title item-section-title">Cargos adicionales de reparación</div>
       ${(state.preOrden?.cargos || []).map((it,i)=>`
@@ -891,21 +898,46 @@ function render(){
       <button class="ghost" onclick="addCargo()">+ Agregar cargo adicional</button>
       ` : ''}
 
+      <div class="section-title">${isFinal ? 'Referencias' : 'Ítems del presupuesto'}</div>
+      ${(state.referencias || []).map((ref,r)=>`
+        <div class="reference-block">
+          ${isFinal ? `<div class="reference-row">
+            <div class="field"><label>Referencia ${r+1}</label><textarea placeholder="Arriendo equipo apilador eléctrico" oninput="setReferenciaSilent(${r},this.value)" onchange="render()">${esc(ref.texto)}</textarea></div>
+            <button class="danger" onclick="delReferencia(${r})" ${(state.referencias || []).length <= 1 ? 'disabled' : ''}>Eliminar referencia</button>
+          </div>` : ''}
+          <div class="section-title item-section-title">${isFinal ? `Ítems referencia ${r+1}` : 'Detalle del cobro'}</div>
+          ${(ref.items || []).map((it,i)=>`
+            <div class="item-row">
+              <div class="grid">
+                ${isFinal ? `<div class="field"><label>Código</label><input value="${esc(it.codigo)}" oninput="setRefItemSilent(${r},${i},'codigo',this.value)" onchange="render()" placeholder="ETV 214"></div>` : ''}
+                <div class="field item-description-field"><label>Descripción</label><textarea class="item-description-input" placeholder="Arriendo mensual apilador eléctrico ETV 214" oninput="setRefItemSilent(${r},${i},'descripcion',this.value)" onchange="render()">${esc(it.descripcion)}</textarea></div>
+                <div class="field"><label>Cantidad</label><input type="number" value="${esc(it.cantidad)}" oninput="setRefItemSilent(${r},${i},'cantidad',this.value)" onchange="render()"></div>
+                ${isFinal ? `<div class="field"><label>U.M.</label><input value="${esc(it.um)}" oninput="setRefItemSilent(${r},${i},'um',this.value)" onchange="render()"></div>` : ''}
+                <div class="field"><label>Precio</label><input type="number" value="${esc(it.precio)}" oninput="setRefItemSilent(${r},${i},'precio',this.value)" onchange="render()" placeholder="1015267"></div>
+                ${isFinal ? `<div class="field"><label>Dscto %</label><input type="number" value="${esc(it.dscto)}" oninput="setRefItemSilent(${r},${i},'dscto',this.value)" onchange="render()"></div>` : ''}
+                <div class="field"><label>Subtotal</label><input readonly value="${money(subtotalItem(it))}"></div>
+                <button class="danger" onclick="delRefItem(${r},${i})">Eliminar ítem</button>
+              </div>
+            </div>`).join('')}
+          <button class="ghost" onclick="addRefItem(${r})">+ Agregar ítem${isFinal ? ` a referencia ${r+1}` : ''}</button>
+        </div>`).join('')}
+      ${isFinal ? '<button class="ghost" onclick="addReferencia()">+ Agregar referencia</button>' : ''}
+
       <div class="section-title">Observaciones</div>
-      <div class="field"><label>${isFinal ? 'Observaciones cotización' : 'Observaciones / notas PRE'}</label><textarea placeholder="${esc(EJEMPLO_NOTAS)}" oninput="setSilent('observaciones',this.value)" onchange="render()">${esc(state.observaciones)}</textarea></div>
+      <div class="field"><label>${isFinal ? 'Observaciones cotización' : 'Notas del presupuesto'}</label><textarea class="notes-input" placeholder="${esc(EJEMPLO_NOTAS)}" oninput="setSilent('observaciones',this.value)" onchange="render()">${esc(state.observaciones)}</textarea></div>
       <div class="field"><label>${isFinal ? 'Garantía' : 'Garantía / validez'}</label><input value="${esc(state.garantia)}" oninput="setSilent('garantia',this.value)" onchange="render()" placeholder="15 días"></div>
       <div class="field"><label>${isFinal ? 'Condiciones comerciales' : 'Condiciones / forma de pago'}</label><textarea placeholder="30 días" oninput="setSilent('condiciones',this.value)" onchange="render()">${esc(state.condiciones||'')}</textarea></div>
 
       <div class="btns sticky-actions">
         <button class="green" onclick="window.print()" ${exportDisabled ? `disabled title="${esc(exportTitle)}"` : ''}>${esc(printTitle)}</button>
-        <button class="yellow" onclick="saveDoc()" ${savingDoc?'disabled':''}>${savingDoc?'Guardando...':(state.numeroReservado?'Guardar cambios':'Guardar PRE')}</button>
+        <button class="yellow" onclick="saveDoc()" ${savingDoc?'disabled':''}>${savingDoc?'Guardando...':(state.numeroReservado?'Guardar cambios':'Guardar presupuesto')}</button>
         <button class="primary" onclick="emitDoc()" ${emitDisabled?'disabled':''} ${emitTitle ? `title="${esc(emitTitle)}"` : ''}>Emitir cotización</button>
-        ${hasPreSnapshot ? `<button class="ghost" onclick="setPreviewMode('${previewMode === 'pre' ? 'actual' : 'pre'}')">${previewMode === 'pre' ? 'Ver cotización final' : 'Ver PRE guardada'}</button>` : ''}
-        <button class="ghost" onclick="newDoc()" ${loadingNumber || savingDoc?'disabled':''}>+ Nueva PRE</button>
+        ${hasPreSnapshot ? `<button class="ghost" onclick="setPreviewMode('${previewMode === 'pre' ? 'actual' : 'pre'}')">${previewMode === 'pre' ? 'Ver cotización final' : 'Ver presupuesto guardado'}</button>` : ''}
+        <button class="ghost" onclick="newDoc()" ${loadingNumber || savingDoc?'disabled':''}>+ Nuevo presupuesto</button>
       </div>
 
       <div class="section-title">Guardadas</div>
-      <div class="saved-list">${saved.map(s=>`<div class="saved"><b>${esc(s.doc.numeroReservado ? 'COTIZACIÓN N° ' + s.doc.numero : 'PRE-COTIZACIÓN ' + (s.doc.preNumero || 'SIN N°'))}</b><span>${esc(s.doc.cliente)} · ${esc(s.doc.savedAt||'')}</span><div class="btns"><button class="ghost" onclick="loadDoc('${s.id}')">Abrir</button><button class="danger" onclick="deleteSaved('${s.id}')">Borrar</button></div></div>`).join('')||'<p class="small">Aún no hay documentos guardados.</p>'}</div>
+      <div class="saved-list">${saved.map(s=>`<div class="saved"><b>${esc(s.doc.numeroReservado ? 'COTIZACIÓN N° ' + s.doc.numero : 'PRESUPUESTO ' + (s.doc.preNumero || 'SIN N°'))}</b><span>${esc(s.doc.cliente)} · ${esc(s.doc.savedAt||'')}</span><div class="btns"><button class="ghost" onclick="loadDoc('${s.id}')">Abrir</button><button class="danger" onclick="deleteSaved('${s.id}')">Borrar</button></div></div>`).join('')||'<p class="small">Aún no hay documentos guardados.</p>'}</div>
     </aside>
 
     <section class="preview-wrap">
