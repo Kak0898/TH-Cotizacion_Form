@@ -821,8 +821,8 @@ async function deleteSaved(id){
   render();
 }
 
-function render(options={}){
-  const preserveScroll = Boolean(options.preserveScroll);
+function render(renderOptions={}){
+  const preserveScroll = Boolean(renderOptions.preserveScroll);
   const previousPanel = document.querySelector('.panel');
   const previousPanelScroll = preserveScroll && previousPanel ? previousPanel.scrollTop : 0;
   const t=totals();
