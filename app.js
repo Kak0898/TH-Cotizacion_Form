@@ -1,6 +1,7 @@
 const IVA = 0.19;
 const BASE_LAST_COTIZACION = 11865;
 const LOGO_SRC = 'assets/th-logo.jpeg';
+const MANUAL_SRC = 'assets/manual-th-cotizaciones.pdf';
 const CLP = new Intl.NumberFormat('es-CL',{style:'currency',currency:'CLP',maximumFractionDigits:0});
 const UF = new Intl.NumberFormat('es-CL',{minimumFractionDigits:2,maximumFractionDigits:2});
 const today = new Date().toISOString().slice(0,10);
@@ -951,6 +952,7 @@ function render(renderOptions={}){
         <button class="primary" onclick="emitDoc()" ${emitDisabled?'disabled':''} ${emitTitle ? `title="${esc(emitTitle)}"` : ''}>Emitir cotización</button>
         ${hasPreSnapshot ? `<button class="ghost" onclick="setPreviewMode('${previewMode === 'pre' ? 'actual' : 'pre'}')">${previewMode === 'pre' ? 'Ver cotización final' : 'Ver presupuesto guardado'}</button>` : ''}
         <button class="ghost" onclick="newDoc()" ${loadingNumber || savingDoc?'disabled':''}>+ Nuevo presupuesto</button>
+        <a class="manual-download" href="${MANUAL_SRC}" download="manual-th-cotizaciones.pdf">Descargar manual TH</a>
       </div>
 
       <div class="section-title">Guardadas</div>

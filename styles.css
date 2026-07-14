@@ -30,6 +30,8 @@ button:hover{transform:translateY(-1px)}
 button:disabled{opacity:.55;cursor:not-allowed;transform:none}
 .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .primary{background:var(--azul);color:white}.yellow{background:var(--amarillo);color:#111}.green{background:var(--verde);color:white}.ghost{background:#e7ecf3}.danger{background:#ffe1e1;color:#8a1111}
+.manual-download{display:inline-flex;align-items:center;justify-content:center;border-radius:10px;padding:11px 13px;background:#dbeafe;color:#0b2f66;font-weight:800;text-decoration:none;transition:.12s transform,.12s opacity}
+.manual-download:hover{transform:translateY(-1px)}
 .status{display:flex;align-items:center;gap:8px;font-size:12px;padding:9px 10px;border-radius:10px;background:#f7faff;border:1px solid #d7e2f2;color:#334155;margin:10px 0}
 .dot{width:9px;height:9px;border-radius:50%;background:#9ca3af;display:inline-block}.dot.ok{background:#16a34a}.dot.warn{background:#f59e0b}.dot.bad{background:#dc2626}
 .action-message{border:1px solid #b7e4c7;background:#ecfdf3;color:#14532d;border-radius:12px;padding:12px 14px;margin:10px 0;font-size:14px;line-height:1.35}
