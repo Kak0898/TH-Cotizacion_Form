@@ -164,7 +164,7 @@ function moneyFor(doc, v){
   const n = Number(v) || 0;
   return currentCurrency(doc) === 'UF' ? `UF ${UF.format(n)}` : CLP.format(Math.round(n)).replace(/^CLP\s?/, '').trim();
 }
-function roundAmount(v){return currentCurrency() === 'UF' ? Math.round((Number(v)||0)*100)/100 : Math.round(Number(v)||0)}
+function dbIntegerAmount(v){return Math.round(Number(v)||0)}
 function blankItem(){return {codigo:'', descripcion:'', cantidad:1, um:'UN', precio:0, dscto:0}}
 function subtotalItem(it){return (Number(it.cantidad)||0)*(Number(it.precio)||0)*(1-(Number(it.dscto)||0)/100)}
 function specExample(i){return ['2.600 mm','6.000 mm','540 mm','24V / 220 AH','1.600 Kg','980 Kg','Incluido / Monofásico','Amarillo Industrial','1.150 mm','Doble','Hombre a Bordo','2500 Kg app','2.360 mm','PTP (*)','Magnético','Abierto','Poliuretano'][i] || ''}
@@ -572,10 +572,10 @@ function buildDbPayload(){
     garantia: state.garantia || '',
     condiciones: state.condiciones || '',
     items: state.referencias || [],
-    subtotal: roundAmount(t.neto),
-    neto: roundAmount(t.neto),
-    iva: roundAmount(t.iva),
-    total: roundAmount(t.total),
+    subtotal: dbIntegerAmount(t.neto),
+    neto: dbIntegerAmount(t.neto),
+    iva: dbIntegerAmount(t.iva),
+    total: dbIntegerAmount(t.total),
     data: {...state, dirty:false, savedAt:new Date().toISOString()},
     updated_at: new Date().toISOString()
   };
